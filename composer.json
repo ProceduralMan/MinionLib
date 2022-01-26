@@ -1,0 +1,22 @@
+{
+    "name": "proceduralman/minionlib",
+    "description": "Swiss Army Knife - like PHP Library",
+    "type": "library",
+    "homepage": "https://github.com/ProceduralMan/MinionLib",
+    "require": {
+        "php": ">=7.0.0"
+    },
+    "license": "LGPL-2.1 License ",
+    "authors": [
+        {
+            "name": "Procedural Man",
+            "email": "pr0c3dur4lman@gmail.com"
+        }
+    ],
+    "support": {
+        "email": "pr0c3dur4lman@gmail.com",
+        "issues": "https://github.com/ProceduralMan/MinionLib/issues"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
