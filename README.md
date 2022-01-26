@@ -6,3 +6,4 @@ Swiss Army Knife - like PHP Library
 ## Not suitable for production use.
 
 ### Heck! I wouldn't even show it to my mama
+
