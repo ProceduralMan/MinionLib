@@ -1,0 +1,219 @@
+[
+ {
+  "START": 0,
+  "END": 8,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned"
+ },
+ {
+  "START": 9,
+  "END": 9,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "discard",
+  "DESCRIPTION": "Discard"
+ },
+ {
+  "START": 10,
+  "END": 1010,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned"
+ },
+ {
+  "START": 1011,
+  "END": 1020,
+  "STATUS": "RESERVED",
+  "SERVICE": null,
+  "DESCRIPTION": "Reserved"
+ },
+ {
+  "START": 1021,
+  "END": 1021,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "exp1",
+  "DESCRIPTION": "RFC3692-style Experiment 1"
+ },
+ {
+  "START": 1022,
+  "END": 1022,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "exp2",
+  "DESCRIPTION": "RFC3692-style Experiment 2"
+ },
+ {
+  "START": 1023,
+  "END": 1112,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned"
+ },
+ {
+  "START": 1113,
+  "END": 1113,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "ltp-deepspace",
+  "DESCRIPTION": "Licklider Transmission Protocol"
+ },
+ {
+  "START": 1114,
+  "END": 3321,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned"
+ },
+ {
+  "START": 3322,
+  "END": 3325,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "active-net",
+  "DESCRIPTION": "Active Networks"
+ },
+ {
+  "START": 3326,
+  "END": 3366,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned"
+ },
+ {
+  "START": 3367,
+  "END": 3371,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "satvid-datalnk",
+  "DESCRIPTION": "Satellite Video Data Link"
+ },
+ {
+  "START": 3372,
+  "END": 4194,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned"
+ },
+ {
+  "START": 4195,
+  "END": 4195,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "aws-wsp",
+  "DESCRIPTION": "AWS protocol for cloud remoting solution"
+ },
+ {
+  "START": 4196,
+  "END": 4199,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned"
+ },
+ {
+  "START": 4200,
+  "END": 4299,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "vrml-multi-use",
+  "DESCRIPTION": "VRML Multi User Systems"
+ },
+ {
+  "START": 4300,
+  "END": 4555,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned"
+ },
+ {
+  "START": 4556,
+  "END": 4556,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "dtn-bundle",
+  "DESCRIPTION": "DTN Bundle DCCP CL Protocol"
+ },
+ {
+  "START": 4557,
+  "END": 5003,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned"
+ },
+ {
+  "START": 5004,
+  "END": 5004,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "avt-profile-1",
+  "DESCRIPTION": "RTP media data"
+ },
+ {
+  "START": 5005,
+  "END": 5005,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "avt-profile-2",
+  "DESCRIPTION": "RTP control protocol"
+ },
+ {
+  "START": 5006,
+  "END": 6513,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned"
+ },
+ {
+  "START": 6514,
+  "END": 6514,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "syslog-tls",
+  "DESCRIPTION": "syslog over DTLS"
+ },
+ {
+  "START": 6515,
+  "END": 7299,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned"
+ },
+ {
+  "START": 7300,
+  "END": 7359,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "swx",
+  "DESCRIPTION": "The Swiss Exchange"
+ },
+ {
+  "START": 7360,
+  "END": 8281,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned"
+ },
+ {
+  "START": 8282,
+  "END": 8282,
+  "STATUS": "RESERVED",
+  "SERVICE": null,
+  "DESCRIPTION": "Reserved"
+ },
+ {
+  "START": 8283,
+  "END": 26999,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned"
+ },
+ {
+  "START": 27000,
+  "END": 27009,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "flex-lm",
+  "DESCRIPTION": "FLEX LM (1-10)"
+ },
+ {
+  "START": 27010,
+  "END": 49151,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned"
+ },
+ {
+  "START": 49152,
+  "END": 65535,
+  "STATUS": "EPHEMERAL",
+  "SERVICE": null,
+  "DESCRIPTION": "For private or customized services, for temporary purposes, and for automatic allocation of ephemeral ports"
+ }
+]

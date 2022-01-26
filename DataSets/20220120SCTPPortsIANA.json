@@ -1,0 +1,1186 @@
+[
+ {
+  "START": 0,
+  "END": 8,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": null
+ },
+ {
+  "START": 9,
+  "END": 9,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "discard",
+  "DESCRIPTION": "Discard",
+  "Column6": "OK"
+ },
+ {
+  "START": 10,
+  "END": 19,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 20,
+  "END": 20,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "ftp-data",
+  "DESCRIPTION": "FTP",
+  "Column6": "OK"
+ },
+ {
+  "START": 21,
+  "END": 21,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "ftp",
+  "DESCRIPTION": "FTP",
+  "Column6": "OK"
+ },
+ {
+  "START": 22,
+  "END": 22,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "ssh",
+  "DESCRIPTION": "SSH",
+  "Column6": "OK"
+ },
+ {
+  "START": 23,
+  "END": 79,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 80,
+  "END": 80,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "http",
+  "DESCRIPTION": "HTTP",
+  "Column6": "OK"
+ },
+ {
+  "START": 81,
+  "END": 178,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 179,
+  "END": 179,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "bgp",
+  "DESCRIPTION": "BGP",
+  "Column6": "OK"
+ },
+ {
+  "START": 180,
+  "END": 442,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 443,
+  "END": 443,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "https",
+  "DESCRIPTION": "HTTPS",
+  "Column6": "OK"
+ },
+ {
+  "START": 444,
+  "END": 1010,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 1011,
+  "END": 1020,
+  "STATUS": "RESERVED",
+  "SERVICE": null,
+  "DESCRIPTION": "Reserved",
+  "Column6": "OK"
+ },
+ {
+  "START": 1021,
+  "END": 1021,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "exp1",
+  "DESCRIPTION": "RFC3692-style Experiment 1",
+  "Column6": "OK"
+ },
+ {
+  "START": 1022,
+  "END": 1022,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "exp2",
+  "DESCRIPTION": "RFC3692-style Experiment 2",
+  "Column6": "OK"
+ },
+ {
+  "START": 1023,
+  "END": 1166,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 1167,
+  "END": 1167,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "cisco-ipsla",
+  "DESCRIPTION": "Cisco IP SLAs Control Protocol",
+  "Column6": "OK"
+ },
+ {
+  "START": 1168,
+  "END": 1527,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 1528,
+  "END": 1528,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "norp",
+  "DESCRIPTION": "Not Only a Routeing Protocol",
+  "Column6": "OK"
+ },
+ {
+  "START": 1529,
+  "END": 1719,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 1720,
+  "END": 1720,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "h323hostcall",
+  "DESCRIPTION": "H.323 Call Control",
+  "Column6": "OK"
+ },
+ {
+  "START": 1721,
+  "END": 2048,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 2049,
+  "END": 2049,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "nfs",
+  "DESCRIPTION": "Network File System",
+  "Column6": "OK"
+ },
+ {
+  "START": 2050,
+  "END": 2224,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 2225,
+  "END": 2225,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "rcip-itu",
+  "DESCRIPTION": "Resource Connection Initiation Protocol",
+  "Column6": "OK"
+ },
+ {
+  "START": 2226,
+  "END": 2903,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 2904,
+  "END": 2905,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "m2ua",
+  "DESCRIPTION": "M2UA",
+  "Column6": "OK"
+ },
+ {
+  "START": 2906,
+  "END": 2943,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 2944,
+  "END": 2944,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "megaco-h248",
+  "DESCRIPTION": "Megaco-H.248 text",
+  "Column6": "OK"
+ },
+ {
+  "START": 2945,
+  "END": 2945,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "h248-binary",
+  "DESCRIPTION": "Megaco\/H.248 binary",
+  "Column6": "OK"
+ },
+ {
+  "START": 2946,
+  "END": 3096,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 3097,
+  "END": 3097,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "itu-bicc-stc",
+  "DESCRIPTION": "ITU-T Q.1902.1\/Q.2150.3",
+  "Column6": "OK"
+ },
+ {
+  "START": 3098,
+  "END": 3321,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 3322,
+  "END": 3325,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "active-net",
+  "DESCRIPTION": "Active Networks",
+  "Column6": "OK"
+ },
+ {
+  "START": 3326,
+  "END": 3366,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 3367,
+  "END": 3371,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "satvid-datalnk",
+  "DESCRIPTION": "Satellite Video Data Link",
+  "Column6": "OK"
+ },
+ {
+  "START": 3372,
+  "END": 3564,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 3565,
+  "END": 3565,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "m2pa",
+  "DESCRIPTION": "M2PA",
+  "Column6": "OK"
+ },
+ {
+  "START": 3566,
+  "END": 3862,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 3863,
+  "END": 3863,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "asap-sctp",
+  "DESCRIPTION": "asap sctp",
+  "Column6": "OK"
+ },
+ {
+  "START": 3864,
+  "END": 3864,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "asap-sctp-tls",
+  "DESCRIPTION": "asap-sctp\/tls",
+  "Column6": "OK"
+ },
+ {
+  "START": 3865,
+  "END": 3867,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 3868,
+  "END": 3868,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "diameter",
+  "DESCRIPTION": "DIAMETER",
+  "Column6": "OK"
+ },
+ {
+  "START": 3869,
+  "END": 4194,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 4195,
+  "END": 4195,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "aws-wsp",
+  "DESCRIPTION": "AWS protocol for cloud remoting solution",
+  "Column6": "OK"
+ },
+ {
+  "START": 4196,
+  "END": 4199,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 4200,
+  "END": 4299,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "vrml-multi-use",
+  "DESCRIPTION": "VRML Multi User Systems",
+  "Column6": "OK"
+ },
+ {
+  "START": 4300,
+  "END": 4332,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 4333,
+  "END": 4333,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "ahsp",
+  "DESCRIPTION": "ArrowHead Service Protocol (AHSP)",
+  "Column6": "OK"
+ },
+ {
+  "START": 4334,
+  "END": 4501,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 4502,
+  "END": 4502,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "a25-fap-fgw",
+  "DESCRIPTION": "A25 (FAP-FGW)",
+  "Column6": "OK"
+ },
+ {
+  "START": 4503,
+  "END": 4710,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 4711,
+  "END": 4711,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "trinity-dist",
+  "DESCRIPTION": "Trinity Trust Network Node Communication",
+  "Column6": "OK"
+ },
+ {
+  "START": 4712,
+  "END": 4738,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 4739,
+  "END": 4739,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "ipfix",
+  "DESCRIPTION": "IP Flow Info Export",
+  "Column6": "OK"
+ },
+ {
+  "START": 4740,
+  "END": 4740,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "ipfixs",
+  "DESCRIPTION": "ipfix protocol over DTLS",
+  "Column6": "OK"
+ },
+ {
+  "START": 4741,
+  "END": 5059,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 5060,
+  "END": 5060,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "sip",
+  "DESCRIPTION": "SIP",
+  "Column6": "OK"
+ },
+ {
+  "START": 5061,
+  "END": 5061,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "sips",
+  "DESCRIPTION": "SIP-TLS",
+  "Column6": "OK"
+ },
+ {
+  "START": 5062,
+  "END": 5089,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 5090,
+  "END": 5090,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "car",
+  "DESCRIPTION": "Candidate AR",
+  "Column6": "OK"
+ },
+ {
+  "START": 5091,
+  "END": 5091,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "cxtp",
+  "DESCRIPTION": "Context Transfer Protocol",
+  "Column6": "OK"
+ },
+ {
+  "START": 5092,
+  "END": 5214,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 5215,
+  "END": 5215,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "noteza",
+  "DESCRIPTION": "NOTEZA Data Safety Service",
+  "Column6": "OK"
+ },
+ {
+  "START": 5216,
+  "END": 5444,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 5445,
+  "END": 5445,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "smbdirect",
+  "DESCRIPTION": "Server Message Block over Remote Direct Memory Access",
+  "Column6": "OK"
+ },
+ {
+  "START": 5446,
+  "END": 5671,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 5672,
+  "END": 5672,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "amqp",
+  "DESCRIPTION": "AMQP",
+  "Column6": "OK"
+ },
+ {
+  "START": 5673,
+  "END": 5674,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 5675,
+  "END": 5675,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "v5ua",
+  "DESCRIPTION": "V5UA application port",
+  "Column6": "OK"
+ },
+ {
+  "START": 5676,
+  "END": 5867,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 5868,
+  "END": 5868,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "diameters",
+  "DESCRIPTION": "Diameter over DTLS\/SCTP",
+  "Column6": "OK"
+ },
+ {
+  "START": 5869,
+  "END": 5909,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 5910,
+  "END": 5910,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "cm",
+  "DESCRIPTION": "Context Management",
+  "Column6": "OK"
+ },
+ {
+  "START": 5911,
+  "END": 5911,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "cpdlc",
+  "DESCRIPTION": "Controller Pilot Data Link Communication",
+  "Column6": "OK"
+ },
+ {
+  "START": 5912,
+  "END": 5912,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "fis",
+  "DESCRIPTION": "Flight Information Services",
+  "Column6": "OK"
+ },
+ {
+  "START": 5913,
+  "END": 5913,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "ads-c",
+  "DESCRIPTION": "Automatic Dependent Surveillance",
+  "Column6": "OK"
+ },
+ {
+  "START": 5914,
+  "END": 6703,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 6704,
+  "END": 6704,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "frc-hp",
+  "DESCRIPTION": "ForCES HP (High Priority) channel",
+  "Column6": "OK"
+ },
+ {
+  "START": 6705,
+  "END": 6705,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "frc-mp",
+  "DESCRIPTION": "ForCES MP (Medium Priority) channel",
+  "Column6": "OK"
+ },
+ {
+  "START": 6706,
+  "END": 6706,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "frc-lp",
+  "DESCRIPTION": "ForCES LP (Low priority) channel",
+  "Column6": "OK"
+ },
+ {
+  "START": 6707,
+  "END": 6969,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 6970,
+  "END": 6970,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "conductor-mpx",
+  "DESCRIPTION": "conductor for multiplex",
+  "Column6": "OK"
+ },
+ {
+  "START": 6971,
+  "END": 7299,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 7300,
+  "END": 7359,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "swx",
+  "DESCRIPTION": "The Swiss Exchange",
+  "Column6": "OK"
+ },
+ {
+  "START": 7360,
+  "END": 7625,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 7626,
+  "END": 7626,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "simco",
+  "DESCRIPTION": "SImple Middlebox COnfiguration (SIMCO)",
+  "Column6": "OK"
+ },
+ {
+  "START": 7627,
+  "END": 7700,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 7701,
+  "END": 7701,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "nfapi",
+  "DESCRIPTION": "SCF nFAPI defining MAC\/PHY split",
+  "Column6": "OK"
+ },
+ {
+  "START": 7702,
+  "END": 7727,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 7728,
+  "END": 7728,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "osvr",
+  "DESCRIPTION": "Open-Source Virtual Reality",
+  "Column6": "OK"
+ },
+ {
+  "START": 7729,
+  "END": 8281,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 8282,
+  "END": 8282,
+  "STATUS": "RESERVED",
+  "SERVICE": null,
+  "DESCRIPTION": "Reserved",
+  "Column6": "OK"
+ },
+ {
+  "START": 8283,
+  "END": 8470,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 8471,
+  "END": 8471,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "pim-port",
+  "DESCRIPTION": "PIM over Reliable Transport",
+  "Column6": "OK"
+ },
+ {
+  "START": 8472,
+  "END": 9081,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 9082,
+  "END": 9082,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "lcs-ap",
+  "DESCRIPTION": "LCS Application Protocol",
+  "Column6": "OK"
+ },
+ {
+  "START": 9083,
+  "END": 9083,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 9084,
+  "END": 9084,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "aurora",
+  "DESCRIPTION": "IBM AURORA Performance Visualizer",
+  "Column6": "OK"
+ },
+ {
+  "START": 9085,
+  "END": 9899,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 9900,
+  "END": 9900,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "iua",
+  "DESCRIPTION": "IUA",
+  "Column6": "OK"
+ },
+ {
+  "START": 9901,
+  "END": 9901,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "enrp-sctp",
+  "DESCRIPTION": "enrp server channel",
+  "Column6": "OK"
+ },
+ {
+  "START": 9902,
+  "END": 9902,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "enrp-sctp-tls",
+  "DESCRIPTION": "enrp\/tls server channel",
+  "Column6": "OK"
+ },
+ {
+  "START": 9903,
+  "END": 11234,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 11235,
+  "END": 11235,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "xcompute",
+  "DESCRIPTION": "numerical systems messaging",
+  "Column6": "OK"
+ },
+ {
+  "START": 11236,
+  "END": 11996,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 11997,
+  "END": 11997,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "wmereceiving",
+  "DESCRIPTION": "WorldMailExpress",
+  "Column6": "OK"
+ },
+ {
+  "START": 11998,
+  "END": 11998,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "wmedistribution",
+  "DESCRIPTION": "WorldMailExpress",
+  "Column6": "OK"
+ },
+ {
+  "START": 11999,
+  "END": 11999,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "wmereporting",
+  "DESCRIPTION": "WorldMailExpress",
+  "Column6": "OK"
+ },
+ {
+  "START": 12000,
+  "END": 14000,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 14001,
+  "END": 14001,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "sua",
+  "DESCRIPTION": "SUA",
+  "Column6": "OK"
+ },
+ {
+  "START": 14002,
+  "END": 20048,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 20049,
+  "END": 20049,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "nfsrdma",
+  "DESCRIPTION": "Network File System (NFS) over RDMA",
+  "Column6": "OK"
+ },
+ {
+  "START": 20050,
+  "END": 25470,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 25471,
+  "END": 25471,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "rna",
+  "DESCRIPTION": "RNSAP User Adaptation for Iurh",
+  "Column6": "OK"
+ },
+ {
+  "START": 25472,
+  "END": 26999,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 27000,
+  "END": 27009,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "flex-lm",
+  "DESCRIPTION": "FLEX LM (1-10)",
+  "Column6": "OK"
+ },
+ {
+  "START": 27010,
+  "END": 29117,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 29118,
+  "END": 29118,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "sgsap",
+  "DESCRIPTION": "SGsAP in 3GPP",
+  "Column6": "OK"
+ },
+ {
+  "START": 29119,
+  "END": 29167,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 29168,
+  "END": 29168,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "sbcap",
+  "DESCRIPTION": "SBcAP in 3GPP",
+  "Column6": "OK"
+ },
+ {
+  "START": 29169,
+  "END": 29169,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "iuhsctpassoc",
+  "DESCRIPTION": "HNBAP and RUA Common Association",
+  "Column6": "OK"
+ },
+ {
+  "START": 29170,
+  "END": 30099,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 30100,
+  "END": 30100,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "rwp",
+  "DESCRIPTION": "Remote Window Protocol",
+  "Column6": "OK"
+ },
+ {
+  "START": 30101,
+  "END": 36411,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 36412,
+  "END": 36412,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "s1-control",
+  "DESCRIPTION": "S1-Control Plane (3GPP)",
+  "Column6": "OK"
+ },
+ {
+  "START": 36413,
+  "END": 36421,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 36422,
+  "END": 36422,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "x2-control",
+  "DESCRIPTION": "X2-Control Plane (3GPP)",
+  "Column6": "OK"
+ },
+ {
+  "START": 36423,
+  "END": 36423,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "slmap",
+  "DESCRIPTION": "SLm Interface Application Protocol",
+  "Column6": "OK"
+ },
+ {
+  "START": 36424,
+  "END": 36424,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "nq-ap",
+  "DESCRIPTION": "Nq and Nq' Application Protocol",
+  "Column6": "OK"
+ },
+ {
+  "START": 36425,
+  "END": 36442,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 36443,
+  "END": 36443,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "m2ap",
+  "DESCRIPTION": "M2 Application Part",
+  "Column6": "OK"
+ },
+ {
+  "START": 36444,
+  "END": 36444,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "m3ap",
+  "DESCRIPTION": "M3 Application Part",
+  "Column6": "OK"
+ },
+ {
+  "START": 36445,
+  "END": 36461,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 36462,
+  "END": 36462,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "xw-control",
+  "DESCRIPTION": "Xw-Control Plane (3GPP)",
+  "Column6": "OK"
+ },
+ {
+  "START": 36463,
+  "END": 37471,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 37472,
+  "END": 37472,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "3gpp-w1ap",
+  "DESCRIPTION": "W1 signalling transport",
+  "Column6": "OK"
+ },
+ {
+  "START": 37473,
+  "END": 38411,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 38412,
+  "END": 38412,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "ng-control",
+  "DESCRIPTION": "NG Control Plane (3GPP)",
+  "Column6": "OK"
+ },
+ {
+  "START": 38413,
+  "END": 38421,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 38422,
+  "END": 38422,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "xn-control",
+  "DESCRIPTION": "Xn Control Plane (3GPP)",
+  "Column6": "OK"
+ },
+ {
+  "START": 38423,
+  "END": 38461,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 38462,
+  "END": 38462,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "e1-interface",
+  "DESCRIPTION": "E1 signalling transport (3GPP)",
+  "Column6": "OK"
+ },
+ {
+  "START": 38463,
+  "END": 38471,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 38472,
+  "END": 38472,
+  "STATUS": "ASSIGNED",
+  "SERVICE": "f1-control",
+  "DESCRIPTION": "F1 Control Plane (3GPP)",
+  "Column6": "OK"
+ },
+ {
+  "START": 38473,
+  "END": 49151,
+  "STATUS": "UNASSIGNED",
+  "SERVICE": null,
+  "DESCRIPTION": "Unassigned",
+  "Column6": "OK"
+ },
+ {
+  "START": 49152,
+  "END": 65535,
+  "STATUS": "EPHEMERAL",
+  "SERVICE": null,
+  "DESCRIPTION": "For private or customized services, for temporary purposes, and for automatic allocation of ephemeral ports",
+  "Column6": "OK"
+ }
+]
