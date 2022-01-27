@@ -5,5 +5,5 @@
 - [x] Include this RoadMap :sunglasses:
 
 ### Bug Fixes
-- [ ] Fix composer autoload behaviour
+- [x] Fix composer autoload behaviour
 - [ ] Eliminate stale references on test implementation
