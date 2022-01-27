@@ -18,5 +18,8 @@
         "issues": "https://github.com/ProceduralMan/MinionLib/issues"
     },
     "minimum-stability": "dev",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "autoload": {
+        "files": ["MinionSetup.php"]
+    }
 }
