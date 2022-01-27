@@ -7,8 +7,8 @@
  * @copyright 2021
  * @version 1.0 initial version
  * @package Minion
- * @todo 
- * @see  
+ * @todo
+ * @see
  */
 
 /**
@@ -16,11 +16,13 @@
  * @param   int     ErrorType
  * @param mixed $ErrorType
  * @return  string  The error literal
+ * @since 0.0.1
+ * @see
+ * @todo
  */
 function ErrorConstantToLiteral($ErrorType)
 {
-    switch ($ErrorType)
-    {
+    switch ($ErrorType) {
         case E_ERROR:
             return 'E_ERROR';
         case E_CORE_ERROR:
@@ -49,25 +51,4 @@ function ErrorConstantToLiteral($ErrorType)
             //Gracefully fail without logging to avoid deadlocking
             return 'UNKNOWN_CODE';
     }
-}
-
-/**
- * LoadIniFile
- * External-facing typed INI file parsing
- * @param string $FilePath
- * @todo borrar, usa un chequeo obsoleto de errores minion
- */
-function LoadIniFile($FilePath)
-{
-    if (ErrorsActive())
-    {
-        //echo 'ERRORS ACTIVE'.PHP_EOL;
-        $ErrorsActive = TRUE;
-    }
-    else
-    {
-        //echo 'ERRORS INACTIVE'.PHP_EOL;
-        $ErrorsActive = FALSE;
-    }
-    $Configuration = parse_ini_file($FilePath, TRUE);
 }
