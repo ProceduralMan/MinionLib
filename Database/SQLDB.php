@@ -617,12 +617,12 @@ function DBSystemSanityCheck($InData, &$OutData)
             return TRUE;
         case "SQLITE":
             $OutData['Success'] = TRUE;
-            $OutData['ReturnValue'] = 'Unimplemented system. Open an issue in <github project> if you need it';
+            $OutData['ReturnValue'] = 'Unimplemented system. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it';
 
             return FALSE;
         case "SQLSRV":
             $OutData['Success'] = TRUE;
-            $OutData['ReturnValue'] = 'Unimplemented system. Open an issue in <github project> if you need it';
+            $OutData['ReturnValue'] = 'Unimplemented system. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it';
 
             return FALSE;
         case "CUBRID":
@@ -634,7 +634,7 @@ function DBSystemSanityCheck($InData, &$OutData)
         case "DB":
         case "DEVLOGGING":
             $OutData['Success'] = TRUE;
-            $OutData['ReturnValue'] = 'Unimplemented system. Open an issue in <github project> if you need it';
+            $OutData['ReturnValue'] = 'Unimplemented system. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it';
 
             return FALSE;
         default:

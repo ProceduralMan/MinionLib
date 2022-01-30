@@ -370,7 +370,7 @@ function BootStrapLogger($InData, &$OutData)
         case "DB":
         case "DEVLOGGING":
             $OutData['Success'] = TRUE;
-            $OutData['ReturnValue'] = 'Unimplemented channel. Open an issue in <github project> if you need it';
+            $OutData['ReturnValue'] = 'Unimplemented channel. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it';
 
             return FALSE;
         default:
@@ -420,7 +420,7 @@ function ChannelSanityCheck($InData, &$OutData)
         case "DB":
         case "DEVLOGGING":
             $OutData['Success'] = TRUE;
-            $OutData['ReturnValue'] = 'Unimplemented channel. Open an issue in <github project> if you need it';
+            $OutData['ReturnValue'] = 'Unimplemented channel. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it';
 
             return FALSE;
         default:
@@ -457,7 +457,7 @@ function DevLoggingDestinationSanityCheck($InData, &$OutData)
     }
     //Unimplemented
     $OutData['Success'] = TRUE;
-    $OutData['ReturnValue'] = 'Unimplemented Destination. Open an issue in <github project> if you need it';
+    $OutData['ReturnValue'] = 'Unimplemented Destination. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it';
 
     return FALSE;
 }
@@ -488,7 +488,7 @@ function DBDestinationSanityCheck($InData, &$OutData)
     }
     //Unimplemented
     $OutData['Success'] = TRUE;
-    $OutData['ReturnValue'] = 'Unimplemented Destination. Open an issue in <github project> if you need it';
+    $OutData['ReturnValue'] = 'Unimplemented Destination. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it';
 
     return FALSE;
 }
@@ -519,7 +519,7 @@ function QueuesDestinationSanityCheck($InData, &$OutData)
     }
     //Unimplemented
     $OutData['Success'] = TRUE;
-    $OutData['ReturnValue'] = 'Unimplemented Destination. Open an issue in <github project> if you need it';
+    $OutData['ReturnValue'] = 'Unimplemented Destination. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it';
 
     return FALSE;
 }
@@ -550,7 +550,7 @@ function NetLoggingDestinationSanityCheck($InData, &$OutData)
     }
     //Unimplemented
     $OutData['Success'] = TRUE;
-    $OutData['ReturnValue'] = 'Unimplemented Destination. Open an issue in <github project> if you need it';
+    $OutData['ReturnValue'] = 'Unimplemented Destination. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it';
 
     return FALSE;
 }
@@ -581,7 +581,7 @@ function FlowAutoDestinationSanityCheck($InData, &$OutData)
     }
     //Unimplemented
     $OutData['Success'] = TRUE;
-    $OutData['ReturnValue'] = 'Unimplemented Destination. Open an issue in <github project> if you need it';
+    $OutData['ReturnValue'] = 'Unimplemented Destination. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it';
 
     return FALSE;
 }
@@ -612,7 +612,7 @@ function IMDestinationSanityCheck($InData, &$OutData)
     }
     //Unimplemented
     $OutData['Success'] = TRUE;
-    $OutData['ReturnValue'] = 'Unimplemented Destination. Open an issue in <github project> if you need it';
+    $OutData['ReturnValue'] = 'Unimplemented Destination. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it';
 
     return FALSE;
 }
@@ -643,7 +643,7 @@ function SMSDestinationSanityCheck($InData, &$OutData)
     }
     //Unimplemented
     $OutData['Success'] = TRUE;
-    $OutData['ReturnValue'] = 'Unimplemented Destination. Open an issue in <github project> if you need it';
+    $OutData['ReturnValue'] = 'Unimplemented Destination. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it';
 
     return FALSE;
 }
@@ -674,7 +674,7 @@ function EmailDestinationSanityCheck($InData, &$OutData)
     }
     //Unimplemented
     $OutData['Success'] = TRUE;
-    $OutData['ReturnValue'] = 'Unimplemented Destination. Open an issue in <github project> if you need it';
+    $OutData['ReturnValue'] = 'Unimplemented Destination. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it';
 
     return FALSE;
 }
@@ -753,7 +753,7 @@ function FilesDestinationSanityCheck($InData, &$OutData)
         case MIL_PROCESSLOG:
             //Unimplemented
             $OutData['Success'] = TRUE;
-            $OutData['ReturnValue'] = 'Unimplemented destination. Open an issue at <github project> if you need it.';
+            $OutData['ReturnValue'] = 'Unimplemented destination. Open an issue at https://github.com/ProceduralMan/MinionLib if you need it.';
 
             return FALSE;
             break;
@@ -2061,7 +2061,7 @@ function RegisterError($InData, &$OutData)
                 case MIL_ERROLOG:
                 case MIL_PROCESSLOG:
                     //Unimplemented
-                    $MessageToCaller = 'Unimplemented destination. You can open an issue at <github project> to notify your need.';
+                    $MessageToCaller = 'Unimplemented destination. You can open an issue at https://github.com/ProceduralMan/MinionLib to notify your need.';
                     $OutData['Success'] = TRUE;
                     $OutData['ReturnValue'] = $MessageToCaller;
 

@@ -7,8 +7,8 @@
 
 ## Version 0.0.3
 ### New Features
-- [ ] Common Database Primitives: Helper functions
-- [ ] Common Database Primitives: MySQL support
+- [x] Common Database Primitives: Helper functions
+- [x] Common Database Primitives: MySQL support
 
 ### Bug Fixes
 - [x] Fix PHP-cs config

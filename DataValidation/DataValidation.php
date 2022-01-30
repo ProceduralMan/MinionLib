@@ -386,28 +386,28 @@ function IsValidCharset($Charset, $System)
     switch ($System) {
         case "MIL_CUBRID":
         case "CUBRID":
-            $ErrorMessage = "Unimplemented system. Open an issue in <github project> if you need it";
+            $ErrorMessage = "Unimplemented system. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it";
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
             return FALSE;
         case "MIL_DBASE":
         case "DBASE":
-            $ErrorMessage = "Unimplemented system. Open an issue in <github project> if you need it";
+            $ErrorMessage = "Unimplemented system. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it";
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
             return FALSE;
         case "MIL_FIREBIRD":
         case "FIREBIRD":
-            $ErrorMessage = "Unimplemented system. Open an issue in <github project> if you need it";
+            $ErrorMessage = "Unimplemented system. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it";
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
             return FALSE;
         case "MIL_INTERBASE":
         case "INTERBASE":
-            $ErrorMessage = "Unimplemented system. Open an issue in <github project> if you need it";
+            $ErrorMessage = "Unimplemented system. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it";
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
@@ -416,7 +416,7 @@ function IsValidCharset($Charset, $System)
         case "MIL_CLOUDSCAPE":
         case "MIL_DERBY":
         case "DB2":
-            $ErrorMessage = "Unimplemented system. Open an issue in <github project> if you need it";
+            $ErrorMessage = "Unimplemented system. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it";
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
@@ -429,7 +429,7 @@ function IsValidCharset($Charset, $System)
             }
             else
             {
-                $ErrorMessage = "Unknown charset '.$Charset.'. Open an issue in <github project> if you feel it is an error";
+                $ErrorMessage = "Unknown charset '.$Charset.'. Open an issue in https://github.com/ProceduralMan/MinionLib if you feel it is an error";
                 echo $ErrorMessage.PHP_EOL;
                 ErrorLog($ErrorMessage, E_USER_ERROR);
 
@@ -438,35 +438,35 @@ function IsValidCharset($Charset, $System)
             break;
         case "MIL_DBASE":
         case "DBASE":
-            $ErrorMessage = "Unimplemented system. Open an issue in <github project> if you need it";
+            $ErrorMessage = "Unimplemented system. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it";
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
             return FALSE;
         case "MIL_ORACLE":
         case "ORACLE":
-            $ErrorMessage = "Unimplemented system. Open an issue in <github project> if you need it";
+            $ErrorMessage = "Unimplemented system. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it";
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
             return FALSE;
         case "MIL_POSTGRE":
         case "POSTGRE":
-            $ErrorMessage = "Unimplemented system. Open an issue in <github project> if you need it";
+            $ErrorMessage = "Unimplemented system. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it";
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
             return FALSE;
         case "MIL_SQLITE":
         case "SQLITE":
-            $ErrorMessage = "Unimplemented system. Open an issue in <github project> if you need it";
+            $ErrorMessage = "Unimplemented system. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it";
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
             return FALSE;
         case "MIL_SQLSRV":
         case "SQLSRV":
-            $ErrorMessage = "Unimplemented system. Open an issue in <github project> if you need it";
+            $ErrorMessage = "Unimplemented system. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it";
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
