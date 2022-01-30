@@ -647,7 +647,7 @@ function DBSystemSanityCheck($InData, &$OutData)
 }
 
 /**
- * RegisterDBSystem registers and checks a DB Connection.
+ * RegisterDBSystem registers a DB Connection.
  * It indexes the connection under the database name
  * @param  string  $System          The chosen DB System: CUBRID, DBASE, FIREBIRD, DB2(Including CLOUDSCAPE and DERBY), MYSQL, ORACLE, POSTGRE, SQLITE or
  *                                      SQLSRV
@@ -1431,7 +1431,7 @@ function Read($ConnectionIndex, $Query, $Output)
 
 /**
  * Update 
- * changes info from the database
+ * changes info on the database
  * @param   array   $ConnectionIndex    The connection heap
  * @param   string  $Query              The query
  * @return  mixed   Affected rows or NULL if affected rows are 0; FALSE if UPDATE fails
@@ -1515,7 +1515,7 @@ function Insert($ConnectionIndex, $Query)
 
 /**
  * Reconnect
- * Connects to a prevously sanitized standard or persistent connection
+ * Connects to a previously sanitized standard or persistent connection
  * @param   array   $ConnectionIndex    The connection heap
  * @return  mixed   ConnectionLink or FALSE if connection fails
  * @since   0.0.3
