@@ -22,33 +22,42 @@
  * @see
  * @todo
  */
-function IsValidHost($HostnameOrIP, $PublicNetwork = true)
+function IsValidHost($HostnameOrIP, $PublicNetwork = TRUE)
 {
     //Localhost is OK
-    if ($HostnameOrIP === 'localhost') {
+    if ($HostnameOrIP === 'localhost')
+    {
         //echo "=>Good by localhost=>";
 
-        return true;
-    } else {
+        return TRUE;
+    }
+    else
+    {
         //echo 'Not localhost =>';
     }
 
     //IPv4
     //if (preg_match("/^(((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))/", $HostnameOrIP))
-    if (preg_match("/(([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){1}(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){2}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/", $HostnameOrIP)) {
+    if (preg_match("/(([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){1}(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){2}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/", $HostnameOrIP))
+    {
         //echo "=>Good by IPV4=>";
 
-        return true;
-    } else {
+        return TRUE;
+    }
+    else
+    {
         //echo 'Not IPv4 =>';
     }
 
     //IPv6
-    if (preg_match("/([a-f0-9:]+:+)+[a-f0-9]+/", $HostnameOrIP)) {
+    if (preg_match("/([a-f0-9:]+:+)+[a-f0-9]+/", $HostnameOrIP))
+    {
         //echo "=>Good by IPV6=>";
 
-        return true;
-    } else {
+        return TRUE;
+    }
+    else
+    {
         //echo 'Not IPv6 =>';
     }
 
@@ -57,54 +66,67 @@ function IsValidHost($HostnameOrIP, $PublicNetwork = true)
     //The total length of the hostname must not exceed 255 characters.
     //if (preg_match("/((([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z|[A-Za-z][A-Za-z0-9\‌\u{200b}-]*[A-Za-z0-9])))$/gm/", $HostnameOrIP))
     //if (preg_match("/^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/", $HostnameOrIP))
-    if (preg_match("/^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$/", $HostnameOrIP)) {
+    if (preg_match("/^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$/", $HostnameOrIP))
+    {
         //echo 'Passes RFC1123 rexexp=>';
-        if (strlen($HostnameOrIP)<254) {
+        if (strlen($HostnameOrIP)<254)
+        {
             //echo 'Passes RFC1123 less than 254 chars=>';
             //If it is a public network, we check that the 1st level domain is an approved IANA TLD
-            if ($PublicNetwork) {
+            if ($PublicNetwork)
+            {
                 //echo 'Is a public network=>';
                 $Result = GetIanaTLDs(10);
-                if ($Result === false) {
+                if ($Result === FALSE)
+                {
                     $ErrorMessage = 'Error getting data';
                     ErrorLog($ErrorMessage, E_USER_ERROR);
-                } else {
+                }
+                else
+                {
                     $Lines = file($Result);
-                    if ($Lines === false) {
+                    if ($Lines === FALSE)
+                    {
                         $ErrorMessage = 'Error getting data from '.$Result;
                         //echo $ErrorMessage.PHP_EOL;
                         ErrorLog($ErrorMessage, E_USER_ERROR);
 
-                        return false;
-                    } else {
+                        return FALSE;
+                    }
+                    else
+                    {
                         //print_r($Lines);
                         $HostnameChunks = explode(".", $HostnameOrIP);
                         $TheTLD = $HostnameChunks[count($HostnameChunks)-1];
                         $TheTLD = strtoupper($TheTLD).PHP_EOL;
                         //echo 'TLD = '.$TheTLD.'=>';
-                        if (in_array($TheTLD, $Lines)) {
+                        if (in_array($TheTLD, $Lines))
+                        {
                             //echo "=>Good by RFC1123=>";
 
-                            return true;
+                            return TRUE;
                         }
                     } //END IANA file loading goes well
                 } //END IANA querying goes swift
             } //END is a public network hostname
-            else {
+            else
+            {
                 //echo "=>Good by RFC1123=>";
 
-                return true;
+                return TRUE;
             } //END is a private network hostname
         } //END hostname is lower than 254 chars
-        else {
+        else
+        {
             //echo "=>Bad by RFC1123 (bigger than 253 chars)=>";
         }
     } //End hostname has only alphanumeric chars and hyphen
-    else {
+    else
+    {
         //echo "=>Bad by RFC1123 (regexp failure)=>";
     }
     //No luck
-    return false;
+    return FALSE;
 }
 
 /**
@@ -123,37 +145,49 @@ function IsValidMySQLObjectName($Object)
 {
     //echo 'Object '.$Object.'=>';
 
-    if (Enclosure($Object) === MIL_QUOTES_BACKTICK) {
+    if (Enclosure($Object) === MIL_QUOTES_BACKTICK)
+    {
         $NudeObject = mb_substr($Object, 1, mb_strlen($Object, "UTF-8")-2, "UTF-8");
         //echo $Object.'=>'.$NudeObject.PHP_EOL;
         //Empty name is bad
-        if (empty($NudeObject)) {
-            return false;
+        if (empty($NudeObject))
+        {
+            return FALSE;
         }
         //A passed test of . / \ is bad
-        if (preg_match("/[.\/\\\\]/", $NudeObject)) {
+        if (preg_match("/[.\/\\\\]/", $NudeObject))
+        {
             //echo $Object.' has dots or slashes'.PHP_EOL;
 
-            return false;
-        } else {
-            //Al digits objects are bad
-            if (preg_match("/^[0-9]*$/", $NudeObject)) {
-                return false;
-            }
-
-            return true;
+            return FALSE;
         }
-    } else {
-        //Only allow alphanumeric, $ and _ (thus not allow /, \ and .)
-        if (preg_match("/^[A-Za-z0-9_\$]+$/", $Object) === 0) {
-            return false;
-        } else {
+        else
+        {
             //Al digits objects are bad
-            if (preg_match("/^[0-9]*$/", $Object)) {
-                return false;
+            if (preg_match("/^[0-9]*$/", $NudeObject))
+            {
+                return FALSE;
             }
 
-            return true;
+            return TRUE;
+        }
+    }
+    else
+    {
+        //Only allow alphanumeric, $ and _ (thus not allow /, \ and .)
+        if (preg_match("/^[A-Za-z0-9_\$]+$/", $Object) === 0)
+        {
+            return FALSE;
+        }
+        else
+        {
+            //Al digits objects are bad
+            if (preg_match("/^[0-9]*$/", $Object))
+            {
+                return FALSE;
+            }
+
+            return TRUE;
         }
     }
 }
@@ -194,31 +228,37 @@ function IsValidMySQLObjectName($Object)
  *      https://dev.mysql.com/doc/refman/8.0/en/identifier-length.html
  * @todo
  */
-function IsValidMySQLName($DBObject, $IsAlias = false)
+function IsValidMySQLName($DBObject, $IsAlias = FALSE)
 {
     //echo 'DBObject = '.$DBObject.'=>';
     //Check valid length
-    if ($IsAlias === true) {
+    if ($IsAlias === TRUE)
+    {
         //Nobody uses multibyte chars on Db names... true?
-        if (empty($DBObject)||mb_strlen($DBObject, 'UTF-8')>255) {
+        if (empty($DBObject)||mb_strlen($DBObject, 'UTF-8')>255)
+        {
             //Alias can have between 1 and 255 chars
-            return false;
+            return FALSE;
         }
-    } else {
-        if (empty($DBObject)||mb_strlen($DBObject, 'UTF-8')>64) {
+    }
+    else
+    {
+        if (empty($DBObject)||mb_strlen($DBObject, 'UTF-8')>64)
+        {
             //The rest between 1 and 64 chars
-            return false;
+            return FALSE;
         }
     }
     //Check valid chars
     //if (Enclosure($DBObject === MIL_QUOTES_BACKTICK))
     //{
-    if (IsValidMySQLObjectName($DBObject) === false) {
-        return false;
+    if (IsValidMySQLObjectName($DBObject) === FALSE)
+    {
+        return FALSE;
     }
     //}
 
-    return true;
+    return TRUE;
 }
 
 /**
@@ -243,34 +283,45 @@ function IsValidMySQLName($DBObject, $IsAlias = false)
  */
 function IsValidMySQLUser($Username)
 {
-    if ((Enclosure($Username) === MIL_QUOTES_SINGLE)||(Enclosure($Username) === MIL_QUOTES_DOUBLE)||(Enclosure($Username) === MIL_QUOTES_BACKTICK)) {
+    if ((Enclosure($Username) === MIL_QUOTES_SINGLE)||(Enclosure($Username) === MIL_QUOTES_DOUBLE)||(Enclosure($Username) === MIL_QUOTES_BACKTICK))
+    {
         $NudeUser = mb_substr($Username, 1, mb_strlen($Username, "UTF-8")-2, "UTF-8");
         //Empty name is bad
-        if (empty($NudeUser)) {
-            return false;
+        if (empty($NudeUser))
+        {
+            return FALSE;
         }
         //Any UTF-8 char is good
-        if (IsValidUTF8Text($Username) === true) {
+        if (IsValidUTF8Text($Username) === TRUE)
+        {
             //Maria DB usernames can be up to 80 characters long before 10.6 and starting from 10.6 it can be 128 characters long
             //But MySQL allow only 32
-            if (mb_strlen($Username, 'UTF-8')<33) {
-                return true;
+            if (mb_strlen($Username, 'UTF-8')<33)
+            {
+                return TRUE;
             }
         }
         //more than 80 or non-valid UTF-8
-        return false;
-    } else {
+        return FALSE;
+    }
+    else
+    {
         //Not enclosed or using parentheses, braces or brackets
         //Empty name is bad
-        if (empty($Username)) {
-            return false;
+        if (empty($Username))
+        {
+            return FALSE;
         }
         //A passed test of _ * ? is bad
-        if (preg_match("/[_*?]/", $Username)) {
-            return false;
-        } else {
-            if (mb_strlen($Username, 'UTF-8')<33) {
-                return true;
+        if (preg_match("/[_*?]/", $Username))
+        {
+            return FALSE;
+        }
+        else
+        {
+            if (mb_strlen($Username, 'UTF-8')<33)
+            {
+                return TRUE;
             }
         }
     }
@@ -339,28 +390,28 @@ function IsValidCharset($Charset, $System)
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
-            return false;
+            return FALSE;
         case "MIL_DBASE":
         case "DBASE":
             $ErrorMessage = "Unimplemented system. Open an issue in <github project> if you need it";
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
-            return false;
+            return FALSE;
         case "MIL_FIREBIRD":
         case "FIREBIRD":
             $ErrorMessage = "Unimplemented system. Open an issue in <github project> if you need it";
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
-            return false;
+            return FALSE;
         case "MIL_INTERBASE":
         case "INTERBASE":
             $ErrorMessage = "Unimplemented system. Open an issue in <github project> if you need it";
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
-            return false;
+            return FALSE;
         case "MIL_DB2":
         case "MIL_CLOUDSCAPE":
         case "MIL_DERBY":
@@ -369,17 +420,20 @@ function IsValidCharset($Charset, $System)
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
-            return false;
+            return FALSE;
         case "MIL_MYSQL":
         case "MYSQL":
-            if (in_array($Charset, $ValidMySQLCharsets)) {
-                return true;
-            } else {
+            if (in_array($Charset, $ValidMySQLCharsets))
+            {
+                return TRUE;
+            }
+            else
+            {
                 $ErrorMessage = "Unknown charset '.$Charset.'. Open an issue in <github project> if you feel it is an error";
                 echo $ErrorMessage.PHP_EOL;
                 ErrorLog($ErrorMessage, E_USER_ERROR);
 
-                return false;
+                return FALSE;
             }
             break;
         case "MIL_DBASE":
@@ -388,35 +442,35 @@ function IsValidCharset($Charset, $System)
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
-            return false;
+            return FALSE;
         case "MIL_ORACLE":
         case "ORACLE":
             $ErrorMessage = "Unimplemented system. Open an issue in <github project> if you need it";
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
-            return false;
+            return FALSE;
         case "MIL_POSTGRE":
         case "POSTGRE":
             $ErrorMessage = "Unimplemented system. Open an issue in <github project> if you need it";
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
-            return false;
+            return FALSE;
         case "MIL_SQLITE":
         case "SQLITE":
             $ErrorMessage = "Unimplemented system. Open an issue in <github project> if you need it";
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
-            return false;
+            return FALSE;
         case "MIL_SQLSRV":
         case "SQLSRV":
             $ErrorMessage = "Unimplemented system. Open an issue in <github project> if you need it";
             echo $ErrorMessage.PHP_EOL;
             ErrorLog($ErrorMessage, E_USER_ERROR);
 
-            return false;
+            return FALSE;
         default:
             $ErrorMessage = 'Unknown DB System';
             echo $ErrorMessage.PHP_EOL;
@@ -436,13 +490,17 @@ function IsValidCharset($Charset, $System)
  */
 function IsValidIANAPort($PortNumber)
 {
-    if ($PortNumber<0) {
-        return false;
+    if ($PortNumber<0)
+    {
+        return FALSE;
     }
-    if ($PortNumber>65535) {
-        return false;
-    } else {
-        return true;
+    if ($PortNumber>65535)
+    {
+        return FALSE;
+    }
+    else
+    {
+        return TRUE;
     }
 }
 
@@ -475,18 +533,20 @@ function IsAdequateDatabasePort($System, $PortNumber, $Proto = 'TCP')
     );
 
     //Test if TCP protocol
-    if ($Proto !== 'TCP') {
+    if ($Proto !== 'TCP')
+    {
         $Result['code'] = 'WRONG';
-        $Result['service'] = null;
+        $Result['service'] = NULL;
         $Result['explanation'] = 'SQL Database systems work over TCP';
 
         return $Result;
     }
 
     //Test if valid port
-    if (IsValidIANAPort($PortNumber) === false) {
+    if (IsValidIANAPort($PortNumber) === FALSE)
+    {
         $Result['code'] = 'WRONG';
-        $Result['service'] = null;
+        $Result['service'] = NULL;
         $Result['explanation'] = 'Port must fall on the valid 0-65535 range';
 
         return $Result;
@@ -495,9 +555,10 @@ function IsAdequateDatabasePort($System, $PortNumber, $Proto = 'TCP')
     //Load TCP ports DataSet
     $FileString = $DataVersion.$Proto.'PortsIANA.json';
     $JSONString = file_get_contents(__DIR__.'/../DataSets/'.$FileString);
-    if ($JSONString === false) {
+    if ($JSONString === FALSE)
+    {
         $Result['code'] = 'ERROR';
-        $Result['service'] = null;
+        $Result['service'] = NULL;
         $Result['explanation'] = 'Unable to read file '.$FileString;
 
         return $Result;
@@ -525,10 +586,11 @@ function IsAdequateDatabasePort($System, $PortNumber, $Proto = 'TCP')
      *             )
      *
      */
-    $TCPPorts = json_decode($JSONString, true);
-    if ($TCPPorts === null) {
+    $TCPPorts = json_decode($JSONString, TRUE);
+    if ($TCPPorts === NULL)
+    {
         $Result['code'] = 'ERROR';
-        $Result['service'] = null;
+        $Result['service'] = NULL;
         $Result['explanation'] = 'Error decoding '.$FileString.' JSON file. '.json_last_error_msg();
 
         return $Result;
@@ -537,9 +599,11 @@ function IsAdequateDatabasePort($System, $PortNumber, $Proto = 'TCP')
     //As the array is sorted, we can find the nearest using the initial port
     //eg: For port 8525, closest is 8504 (key 5832)
     //eg: For port 8550, closest is 8554 (key 5833) which is indeed the nearest start but on other sequence
-    $Closest = null;
-    foreach ($TCPPorts as $Key => $Value) {
-        if ($Closest === null||abs($PortNumber-$Closest)>abs($Value['START']-$PortNumber)) {
+    $Closest = NULL;
+    foreach ($TCPPorts as $Key => $Value)
+    {
+        if ($Closest === NULL||abs($PortNumber-$Closest)>abs($Value['START']-$PortNumber))
+        {
             $Closest = $Value['START'];
             $ClosestKey = $Key;
         }
@@ -550,17 +614,23 @@ function IsAdequateDatabasePort($System, $PortNumber, $Proto = 'TCP')
     //So we check includeness -it will always be no more than one less or one more then the correct
     $Start = $TCPPorts[$ClosestKey]['START'];
     $End = $TCPPorts[$ClosestKey]['END'];
-    if (($Start<=$PortNumber)&&($PortNumber<=$End)) {
+    if (($Start<=$PortNumber)&&($PortNumber<=$End))
+    {
         $ValidationKey = $ClosestKey;
-    } elseif ($PortNumber<$Start) {
+    }
+    elseif ($PortNumber<$Start)
+    {
         $ValidationKey = $ClosestKey-1;
-    } else {
+    }
+    else
+    {
         $ValidationKey = $ClosestKey+1;
     }
     //echo 'Closest is '.$Closest.' (key '.$ClosestKey.') but correct is range '.$TCPPorts[$ValidationKey]['START'].'-'.$TCPPorts[$ValidationKey]['END'].PHP_EOL;
 
     //See if it is standard
-    if ($StandardPorts[$System] === $PortNumber) {
+    if ($StandardPorts[$System] === $PortNumber)
+    {
         $Result['code'] = 'OK';
         $Result['service'] = $TCPPorts[$ValidationKey]['SERVICE'];
         $Result['explanation'] = 'SQL Database uses standard port '.$PortNumber.' '.$TCPPorts[$ValidationKey]['STATUS'].' to '.
@@ -573,7 +643,7 @@ function IsAdequateDatabasePort($System, $PortNumber, $Proto = 'TCP')
     switch ($TCPPorts[$ValidationKey]['STATUS']) {
         case 'UNASSIGNED':
             $Result['code'] = 'OK';
-            $Result['service'] = null;
+            $Result['service'] = NULL;
             $Result['explanation'] = 'SQL Database uses '.$TCPPorts[$ValidationKey]['STATUS'].' port '.$PortNumber;
             break;
         case 'ASSIGNED':
@@ -584,13 +654,13 @@ function IsAdequateDatabasePort($System, $PortNumber, $Proto = 'TCP')
             break;
         case 'EPHEMERAL':
             $Result['code'] = 'WARN';
-            $Result['service'] = null;
+            $Result['service'] = NULL;
             $Result['explanation'] = 'SQL Database uses valid port '.$PortNumber.' but that port is '.$TCPPorts[$ValidationKey]['STATUS'].
                     ', thus meant to be used "'.$TCPPorts[$ValidationKey]['DESCRIPTION'].'"... not the best choice';
             break;
         case 'RESERVED':
             $Result['code'] = 'WRONG';
-            $Result['service'] = null;
+            $Result['service'] = NULL;
             $Result['explanation'] = 'SQL Database uses valid port '.$PortNumber.' but that port is '.$TCPPorts[$ValidationKey]['STATUS'].
                 ' and should not be used.';
             break;

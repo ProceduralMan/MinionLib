@@ -1,5 +1,9 @@
 # MinionLib Change Log
 
+## Version 0.0.2
+- Roadmap info
+- Composer integration
+
 ## Version 0.0.1
 - Configuration Functions
   - ErrorConstantToLiteral: turns standard int error constants to error literals
