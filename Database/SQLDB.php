@@ -55,7 +55,9 @@ $GLOBALS['DB'] = NULL;
 
 /**
  * RegisterMySQLConnection
- * Front-end function to register a connection to MySQL
+ * Front-end function to register a connection to MySQL.
+ * When used on web pages it should be caled just once at session creation.
+ * The function RegisterDBSystem includes safety mechanisms to avoid create multiple sibling pools on concurrent usage
  * @param string    $ServerName             The hostname
  * @param string    $Database               The database name
  * @param string    $DBUser                 The user
@@ -83,30 +85,11 @@ $GLOBALS['DB'] = NULL;
  * @see
  * @todo
  */
-function RegisterMySQLConnection(
-    $ServerName,
-    $Database,
-    $DBUser,
-    $DBPassword,
-    $KeepOpen = FALSE,
-    $Persistent = FALSE,
-    $ConnectionTimeout = NULL,
-    $CommandTimeout = NULL,
-    $UseLocalInfile = NULL,
-    $InitCommand = NULL,
-    $Charset = NULL,
-    $OptionsFile = NULL,
-    $DefaultGroup = NULL,
-    $ServerPublicKey = NULL,
-    $CompressionProtocol = NULL,
-    $FoundRows = NULL,
-    $IgnoreSpaces = NULL,
-    $InteractiveClient = NULL,
-    $UseSSL = NULL,
-    $DoNotVerifyServerCert = NULL,
-    $Port = NULL,
-    $Socket = NULL
-) {
+function RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $KeepOpen = FALSE, $Persistent = FALSE, $ConnectionTimeout = NULL,
+    $CommandTimeout = NULL, $UseLocalInfile = NULL, $InitCommand = NULL, $Charset = NULL, $OptionsFile = NULL, $DefaultGroup = NULL, $ServerPublicKey = NULL,
+    $CompressionProtocol = NULL, $FoundRows = NULL, $IgnoreSpaces = NULL, $InteractiveClient = NULL, $UseSSL = NULL, $DoNotVerifyServerCert = NULL,
+    $Port = NULL, $Socket = NULL)
+{
     if (DEBUGMODE)
     {
         echo date("Y-m-d H:i:s").' -> RegisterMySQLConnection '.PHP_EOL;
@@ -208,18 +191,36 @@ function RegisterMySQLConnection(
         {
             $InData['ConnectionLink'] = $OutData['ConnectionLink'];
         }
-        $RegisterResult = RegisterDBSystem($InData, $OutData);
-        if ($RegisterResult === FALSE)
+        //If there is a pool defined, we persist the pool info using APCU (REDIS to come)
+        if (is_int(MIL_POOLEDCONNECTIONS))
         {
-            $ErrorMessage = 'Error registering MySQL connection: '.$OutData['ReturnValue'];
-            echo $ErrorMessage.PHP_EOL;
-            ErrorLog($ErrorMessage, E_USER_ERROR);
+            if (MIL_ACPU === TRUE)
+            {
+                $RegisterResult = RegisterDBSystem($InData, $OutData);
+                if ($RegisterResult === FALSE)
+                {
+                    $ErrorMessage = 'Error registering MySQL connection: '.$OutData['ReturnValue'];
+                    echo $ErrorMessage.PHP_EOL;
+                    ErrorLog($ErrorMessage, E_USER_ERROR);
 
-            return FALSE;
-        }
-    }
+                    return FALSE;
+                }
+                else
+                {
+                    return $RegisterResult;
+                }
+            }   //There is ACPU present
+            else
+            {
+                //NO APCU... no pool
+                $ErrorMessage = 'No persistence layer to keep the pool on. Please setup APCU and enable MIL_ACPU on MinionSetup.php';
+                echo $ErrorMessage.PHP_EOL;
+                ErrorLog($ErrorMessage, E_USER_ERROR);
 
-    return $RegisterResult;
+                return FALSE;
+            }   //There isn't ACPU present
+        }   //There is a pool size defined
+    }   //Connection sanity check OK
 }
 
 /**
@@ -649,208 +650,202 @@ function DBSystemSanityCheck($InData, &$OutData)
 /**
  * RegisterDBSystem registers a DB Connection.
  * It indexes the connection under the database name
- * @param  string  $System          The chosen DB System: CUBRID, DBASE, FIREBIRD, DB2(Including CLOUDSCAPE and DERBY), MYSQL, ORACLE, POSTGRE, SQLITE or
- *                                      SQLSRV
- * @param  string  $ServerName      The chosen server. 'localhost' or nothing for SQLite
- * @param  string  $Database        The Database. Filename path or :memory: if using in-memory db for SQLite
- * @param  string  $DBUser          The User
- * @param  string  $DBPassword      The Password
- * @param  array   $Options         System-specific options
- *                                      MySQL
- *                                          'ConnectionTimeout'         Flag MYSQLI_OPT_CONNECT_TIMEOUT, controls connection timeout in seconds
- *                                          'CommandTimeout'            Flag MYSQLI_OPT_READ_TIMEOUT, controls Command execution result timeout in seconds.
- *                                                                          Available as of PHP 7.2.0.
- *                                          'UseLocalInfile'            Flag MYSQLI_OPT_LOCAL_INFILE, controls Enable/disable use of LOAD LOCAL INFILE to allow
- *                                                                          load of big files into a table
- *                                          'InitCommand'               Flag MYSQLI_INIT_COMMAND, command to execute after when connecting to MySQL server
- *                                          'Charset'                   Flag MYSQLI_SET_CHARSET_NAME, the charset to be set as default (duplicado de $CharacterSet)
- *                                          'OptionsFile'               Flag MYSQLI_READ_DEFAULT_FILE, read options from named option file instead of my.cnf
- *                                          'DefaultGroup'              Flag MYSQLI_READ_DEFAULT_GROUP, read options from the named group from my.cnf or the
- *                                                                          file specified with MYSQL_READ_DEFAULT_FILE
- *                                          'ServerPublicKey'           Flag MYSQLI_SERVER_PUBLIC_KEY, RSA public key file used with the SHA-256 based
- *                                                                          authentication
- *                                          'CompressionProtocol'       Sets MYSQLI_CLIENT_COMPRESS on mysqli_real_connect to use compression protocol on the
- *                                                                          connection
- *                                          'FoundRows'                 Sets MYSQLI_CLIENT_FOUND_ROWS on mysqli_real_connect to return number of matched rows,
- *                                                                          not the number of affected rows
- *                                          'IgnoreSpaces'              Sets MYSQLI_CLIENT_IGNORE_SPACE on mysqli_real_connect to allow spaces after function
- *                                                                          names. Makes all function names reserved words.
- *                                          'InteractiveClient'         Sets MYSQLI_CLIENT_INTERACTIVE on mysqli_real_connect to allow interactive_timeout
- *                                                                          seconds (instead of wait_timeout seconds) of inactivity before closing the
- *                                                                          connection
- *                                          'UseSSL'                    Sets MYSQLI_CLIENT_SSL on mysqli_real_connect to use SSL (encryption)
- *                                          'DoNotVerifyServerCert'     Sets MYSQLI_CLIENT_SSL_DONT_VERIFY_SERVER_CERT on mysqli_real_connect to use SSL while
- *                                                                          disabling validation of the provided SSL certificate.
- *                                          'Port'                      Sets PORT on network connections
- *                                          'Socket'                    Sets UNIX socket on local connections (localhost)
- *                                      SQLSRV
- *                                          'WarningsReturnAsErrors'    By default, the SQLSRV driver treats warnings as errors; To disable this behavior,
- *                                                                          set a 0 here. To enable it, set a 1
- *                                          'LogSubsystems'             What is logged to PHP System Log
- *                                              SQLSRV_LOG_SYSTEM_OFF (0)   Turns logging off.
- *                                              SQLSRV_LOG_SYSTEM_INIT (1)  Turns on logging of initialization activity
- *                                              SQLSRV_LOG_SYSTEM_CONN (2)  Turns on logging of connection activity.
- *                                              SQLSRV_LOG_SYSTEM_STMT (4)  Turns on logging of statement activity.
- *                                              SQLSRV_LOG_SYSTEM_UTIL (8)  Turns on logging of error functions activity (such as handle_error and
- *                                                                              handle_warning).
- *                                              SQLSRV_LOG_SYSTEM_ALL (-1)  Turns on logging of all subsystems.
- *                                          'LogSeverity'               Which errorlevel to log
- *                                              SQLSRV_LOG_SEVERITY_ERROR (1)   Specifies that errors are logged. This is the default.
- *                                              SQLSRV_LOG_SEVERITY_WARNING (2) Specifies that warnings are logged.
- *                                              SQLSRV_LOG_SEVERITY_NOTICE (4)  Specifies that notices are logged.
- *                                              SQLSRV_LOG_SEVERITY_ALL (-1)    Specifies that errors, warnings, and notices are logged.
- *                                         'AccessToken'                The Azure AD Access Token extracted from an OAuth JSON response. The connection
- *                                                                          string must not contain user ID, password, or the Authentication keyword
- *                                                                          (requires ODBC Driver version 17 or above in Linux or macOS). Mutually exclusive
- *                                                                          with 'Authentication'
- *                                         'Authentication'             Authentication mode determined by other keywords
- *                                              SqlPassword                     Directly authenticate to a SQL Server instance (which may be an Azure instance)
- *                                                                                  using a username and password. The username and password must be passed into
- *                                                                                  the connection string using the UID and PWD keywords.
- *                                              ActiveDirectoryPassword         Authenticate with an Azure Active Directory identity using a username and
- *                                                                                  password. The username and password must be passed into the connection
- *                                                                                  string using the UID and PWD keywords.
- *                                              ActiveDirectoryMsi              Authenticate using either a system-assigned managed identity or a user-assigned
- *                                                                                  managed identity (requires ODBC Driver version 17.3.1.1 or above)
- *                                              ActiveDirectoryServicePrincipal Authenticate using service principal objects (requires ODBC Driver version 17.7
- *                                                                                  or above)
- *                                         'UID'                        Specifies the User ID to be used when connecting with SQL Server Authentication (duplicado de $DBUser)
- *                                         'PWD'                        Specifies the password associated with the User ID to be used when connecting with SQL
- *                                                                          Server Authentication.
- *                                         'ApplicationIntent'          Declares the application workload type when connecting to a server. Possible values are
- *                                                                          ReadOnly and ReadWrite. Default value ReadWrite
- *                                         'AttachDBFileName'           Specifies which database file the server should attach.
- *                                         'CharacterSet'               Specifies the character set used to send data to the server. Possible values are
- *                                                                          SQLSRV_ENC_CHAR and UTF-8. Default value SQLSRV_ENC_CHAR
- *                                         'ColumnEncryption'           Specifies whether the Always Encrypted feature is enabled or not. Possible values are
- *                                                                          Enabled and Disabled. Default value Disabled
- *                                         'ConnectionPooling'          Specifies whether the connection is assigned from a connection pool (1 or true) or not
- *                                                                          (0 or false). Default value true (1). Has no effect on Linux and MacOs where should
- *                                                                          be set via odbcinst.ini
- *                                         'ConnectRetryCount'          The maximum number of attempts to reestablish a broken connection before giving up. By
- *                                                                          default, a single attempt is made to reestablish a connection when broken. A value
- *                                                                          of 0 means that no reconnection will be attempted. Values: 0-255. Default value 1
- *                                         'ConnectRetryInterval'       The time, in seconds, between attempts to reestablish a connection. The application will
- *                                                                          attempt to reconnect immediately upon detecting a broken connection, and will then
- *                                                                          wait ConnectRetryInterval seconds before trying again. This keyword is ignored if
- *                                                                          ConnectRetryCount is equal to 0. Values 0-60. Default value 10
- *                                         'Database'                   Specifies the name of the database in use for the connection being established. (duplicado de $Database)
- *                                         'FormatDecimals'             Specifies whether to add leading zeroes to decimal strings when appropriate and enables
- *                                                                          the DecimalPlaces option for formatting money types (1 or true). If left false (0),
- *                                                                          the default behavior of returning exact precision and omitting leading zeroes for
- *                                                                          values less than 1 is used. Default value false (0)
- *                                         'DecimalPlaces'              Specifies the decimal places when formatting fetched money values. Integer between 0 and
- *                                                                          4 (inclusive). This option works only when FormatDecimals is true. Any negative
- *                                                                          integer or value more than 4 will be ignored.
- *                                         'Driver'                     Specifies the Microsoft ODBC driver used to communicate with SQL Server. Windows only
- *                                              ODBC Driver 11 for SQL Server
- *                                              ODBC Driver 13 for SQL Server
- *                                              ODBC Driver 17 for SQL Server
- *                                         'Encrypt'                    Specifies whether the communication with SQL Server is encrypted (1 or true) or
- *                                                                          unencrypted (0 or false). Default value false (0)
- *                                         'Failover_Partner'           Windows only. Specifies the server and instance of the database's mirror (if enabled and
- *                                                                          configured) to use when the primary server is unavailable.
- *                                         'KeyStoreAuthentication'     Authentication method for accessing Azure Key Vault. Controls what kind of credentials
- *                                                                          are used with KeyStorePrincipalId and KeyStoreSecret.
- *                                              KeyVaultPassword
- *                                              KeyVaultClientSecret
- *                                         'KeyStorePrincipalId'        Identifier for the account seeking to access Azure Key Vault. If KeyStoreAuthentication
- *                                                                          is KeyVaultPassword, this value must be an Azure Active Directory username. If
- *                                                                          KeyStoreAuthentication is KeyVaultClientSecret, this value must be an application
- *                                                                          client ID
- *                                         'KeyStoreSecret'             Credential secret for the account seeking to access Azure Key Vault. If
- *                                                                          KeyStoreAuthentication is KeyVaultPassword, this value must be an Azure Active
- *                                                                          Directory password. If KeyStoreAuthentication is KeyVaultClientSecret, this value
- *                                                                          must be an application client secret.
- *                                         'Language'                   Specifies the language of messages returned by the server. The available languages are
- *                                                                          listed in the sys.syslanguages table. Does not affect the language used by the
- *                                                                          drivers themselves, as they are currently available only in English, and it does not
- *                                                                          affect the language of the underlying ODBC driver, whose language is determined by
- *                                                                          the localized version installed on the client system. The default is the language
- *                                                                          set in SQL Server.
- *                                         'LoginTimeout'               Specifies the number of seconds to wait before failing the connection attempt. Default
- *                                                                          value no timeout.
- *                                         'MultipleActiveResultSets'   Disables -false (0)- or explicitly enables -true (1)- support for multiple active result
- *                                                                          sets (MARS). Default value true (1).
- *                                         'MultiSubnetFailover'        Support for AlwaysOn Availability Groups. Possible values are yes and no. Default value
- *                                                                          no. Always specify multiSubnetFailover=yes when connecting to the availability group
- *                                                                          listener of a SQL Server 2012 (11.x) availability group or a SQL Server 2012 (11.x)
- *                                                                          Failover Cluster Instance.
- *                                         'TransparentNetworkIPResolution' Affects the connection sequence when the first resolved IP of the hostname does not
- *                                                                          respond and there are multiple IPs associated with the hostname. Possible values
- *                                                                          enabled and disabled. It interacts with MultiSubnetFailover to provide different
- *                                                                          connection sequences.
- *                                         'QuotedId'                   Specifies whether to use SQL-92 rules for quoted identifiers (1 or true) or to use
- *                                                                          legacy Transact-SQL rules (0 or false). Default value true (1)
- *                                         'ReturnDatesAsStrings'       Retrieves date and time types (datetime, smalldatetime, date, time, datetime2, and
- *                                                                          datetimeoffset) as strings or as PHP types. 1 or true to return date and time types
- *                                                                          as strings. 0 or false to return date and time types as PHP DateTime types. Default
- *                                                                          value false (0).
- *                                         'Scrollable'                 Client-side (buffered) and server-side (unbuffered) cursors. Default value 'forward'
- *                                              SQLSRV_CURSOR_FORWARD           Lets you move one row at a time starting at the first row of the result set
- *                                                                                  until you reach the end of the result set. This is the default cursor type.
- *                                                                                  type. sqlsrv_num_rows returns an error for result sets created with this
- *                                                                                  cursor. 'forward' is the abbreviated form of SQLSRV_CURSOR_FORWARD
- *                                              SQLSRV_CURSOR_STATIC            Lets you access rows in any order but will not reflect changes in the database.
- *                                                                                  'static' is the abbreviated form of SQLSRV_CURSOR_STATIC
- *                                              SQLSRV_CURSOR_DYNAMIC           Lets you access rows in any order and will reflect changes in the database.
- *                                                                                  sqlsrv_num_rows returns an error for result sets created with this cursor
- *                                                                                  type. 'dynamic' is the abbreviated form of SQLSRV_CURSOR_DYNAMIC.
- *                                              SQLSRV_CURSOR_KEYSET            Lets you access rows in any order. However, a keyset cursor does not update the
- *                                                                                  row count if a row is deleted from the table (a deleted row is returned with
- *                                                                                  no values). keyset is the abbreviated form of SQLSRV_CURSOR_KEYSET.
- *                                              SQLSRV_CURSOR_CLIENT_BUFFERED   Lets you access rows in any order. Creates a client-side cursor query.
- *                                                                                  'buffered' is the abbreviated form of SQLSRV_CURSOR_CLIENT_BUFFERED.
- *                                         'TraceOn'                    Specifies whether ODBC tracing is enabled (1 or true) or disabled (0 or false) for the
- *                                                                          connection being established. Default value false (0)
- *                                         'TraceFile'                  Specifies the path for the file used for trace data.
- *                                         'APP'                        Specifies the application name used in tracing.
- *                                         'WSID'                       Specifies the name of the computer for tracing.
- *                                         'TransactionIsolation'       Specifies the transaction isolation level. DSefault value SQLSRV_TXN_READ_COMMITTED
- *                                              SQLSRV_TXN_READ_UNCOMMITTED     Specifies that statements can read rows that have been modified by other
- *                                                                                  transactions but not yet committed. Transactions running at the READ
- *                                                                                  UNCOMMITTED level do not issue shared locks to prevent other transactions
- *                                                                                  from modifying data read by the current transaction. It is possible to make
- *                                                                                  dirty reads.
- *                                              SQLSRV_TXN_READ_COMMITTED       Specifies that statements cannot read data that has been modified but not
- *                                                                                  committed by other transactions. This prevents dirty reads. Data can be
- *                                                                                  changed by other transactions between individual statements within the
- *                                                                                  current transaction, resulting in nonrepeatable reads or phantom data.
- *                                                                                  This option is the SQL Server default.
- *                                              SQLSRV_TXN_REPEATABLE_READ      Specifies that statements cannot read data that has been modified but not yet
- *                                                                                  committed by other transactions and that no other transactions can modify
- *                                                                                  data that has been read by the current transaction until the current
- *                                                                                  transaction completes. Shared locks are placed on all data read by each
- *                                                                                  statement in the transaction and are held until the transaction completes.
- *                                                                                  Use this option only when necessary.
- *                                              SQLSRV_TXN_SNAPSHOT             Specifies that data read by any statement in a transaction will be the
- *                                                                                  transactionally consistent version of the data that existed at the start of
- *                                                                                  the transaction. The transaction can only recognize data modifications that
- *                                                                                  were committed before the start of the transaction. Data modifications made
- *                                                                                  by other transactions after the start of the current transaction are not
- *                                                                                  visible to statements executing in the current transaction. The effect is as
- *                                                                                  if the statements in a transaction get a snapshot of the committed data as
- *                                                                                  it existed at the start of the transaction.
- *                                              SQLSRV_TXN_SERIALIZABLE         1)Statements cannot read data that has been modified but not yet committed by
- *                                                                                  other transactions. 2) No other transactions can modify data that has been
- *                                                                                  read by the current transaction until the current transaction completes. 3)
- *                                                                                  Other transactions cannot insert new rows with key values that would fall in
- *                                                                                  the range of keys read by any statements in the current transaction until
- *                                                                                  the current transaction completes. Range locks are placed in the range of
- *                                                                                  key values that match the search conditions of each statement executed in a
- *                                                                                  transaction. Because concurrency is lower, use this option only when
- *                                                                                  necessary.
- *                                         'TrustServerCertificate'     Specifies whether the client should trust (1 or true) or reject (0 or false) a
- *                                                                          self-signed server certificate. Default value false (0).
- *                                      SQLITE3
- *                                         'flags'                      How to open SQLite. Default value SQLITE3_OPEN_READWRITE|SQLITE3_OPEN_CREATE
- *                                              SQLITE3_OPEN_READONLY       Open in read-only mode
- *                                              SQLITE3_OPEN_READWRITE      Open in read-write mode
- *                                              SQLITE3_OPEN_CREATE         Create database if it does not exist
- * @param  int     $LoginTimeout           The Timeout
- * @param  boolean $Encrypt                Must the connection be encrypted?
- * @param  boolean $TrustServerCertificate Must the server certificate not be checked?
  * @param mixed $InData
+ *      'System'         The chosen DB System: CUBRID, DBASE, FIREBIRD, DB2(Including CLOUDSCAPE and DERBY), MYSQL, ORACLE, POSTGRE, SQLITE or SQLSRV
+ *      'ServerName'     The chosen server. 'localhost' or nothing for SQLite
+ *      'Database'       The Database. Filename path or :memory: if using in-memory db for SQLite
+ *      'DBUser'         The User
+ *      'DBPassword'     The Password
+ *      'Options'        System-specific options
+ *                          MySQL
+ *                              'ConnectionTimeout'         Flag MYSQLI_OPT_CONNECT_TIMEOUT, controls connection timeout in seconds
+ *                              'CommandTimeout'            Flag MYSQLI_OPT_READ_TIMEOUT, controls Command execution result timeout in seconds.
+ *                                                              Available as of PHP 7.2.0.
+ *                              'UseLocalInfile'            Flag MYSQLI_OPT_LOCAL_INFILE, controls Enable/disable use of LOAD LOCAL INFILE to allow
+ *                                                              load of big files into a table
+ *                              'InitCommand'               Flag MYSQLI_INIT_COMMAND, command to execute after when connecting to MySQL server
+ *                              'Charset'                   Flag MYSQLI_SET_CHARSET_NAME, the charset to be set as default (duplicado de $CharacterSet)
+ *                              'OptionsFile'               Flag MYSQLI_READ_DEFAULT_FILE, read options from named option file instead of my.cnf
+ *                              'DefaultGroup'              Flag MYSQLI_READ_DEFAULT_GROUP, read options from the named group from my.cnf or the
+ *                                                              file specified with MYSQL_READ_DEFAULT_FILE
+ *                              'ServerPublicKey'           Flag MYSQLI_SERVER_PUBLIC_KEY, RSA public key file used with the SHA-256 based
+ *                                                              authentication
+ *                              'CompressionProtocol'       Sets MYSQLI_CLIENT_COMPRESS on mysqli_real_connect to use compression protocol on the
+ *                                                              connection
+ *                              'FoundRows'                 Sets MYSQLI_CLIENT_FOUND_ROWS on mysqli_real_connect to return number of matched rows,
+ *                                                              not the number of affected rows
+ *                              'IgnoreSpaces'              Sets MYSQLI_CLIENT_IGNORE_SPACE on mysqli_real_connect to allow spaces after function
+ *                                                              names. Makes all function names reserved words.
+ *                              'InteractiveClient'         Sets MYSQLI_CLIENT_INTERACTIVE on mysqli_real_connect to allow interactive_timeout
+ *                                                              seconds (instead of wait_timeout seconds) of inactivity before closing the
+ *                                                              connection
+ *                              'UseSSL'                    Sets MYSQLI_CLIENT_SSL on mysqli_real_connect to use SSL (encryption)
+ *                              'DoNotVerifyServerCert'     Sets MYSQLI_CLIENT_SSL_DONT_VERIFY_SERVER_CERT on mysqli_real_connect to use SSL while
+ *                                                              disabling validation of the provided SSL certificate.
+ *                              'Port'                      Sets PORT on network connections
+ *                              'Socket'                    Sets UNIX socket on local connections (localhost)
+ *                          SQLSRV
+ *                              'WarningsReturnAsErrors'    By default, the SQLSRV driver treats warnings as errors; To disable this behavior,
+ *                                                              set a 0 here. To enable it, set a 1
+ *                              'LogSubsystems'             What is logged to PHP System Log
+ *                                  SQLSRV_LOG_SYSTEM_OFF (0)   Turns logging off.
+ *                                  SQLSRV_LOG_SYSTEM_INIT (1)  Turns on logging of initialization activity
+ *                                  SQLSRV_LOG_SYSTEM_CONN (2)  Turns on logging of connection activity.
+ *                                  SQLSRV_LOG_SYSTEM_STMT (4)  Turns on logging of statement activity.
+ *                                  SQLSRV_LOG_SYSTEM_UTIL (8)  Turns on logging of error functions activity (such as handle_error and handle_warning).
+ *                                  SQLSRV_LOG_SYSTEM_ALL (-1)  Turns on logging of all subsystems.
+ *                              'LogSeverity'               Which errorlevel to log
+ *                                  SQLSRV_LOG_SEVERITY_ERROR (1)   Specifies that errors are logged. This is the default.
+ *                                  SQLSRV_LOG_SEVERITY_WARNING (2) Specifies that warnings are logged.
+ *                                  SQLSRV_LOG_SEVERITY_NOTICE (4)  Specifies that notices are logged.
+ *                                  SQLSRV_LOG_SEVERITY_ALL (-1)    Specifies that errors, warnings, and notices are logged.
+ *                              'AccessToken'                The Azure AD Access Token extracted from an OAuth JSON response. The connection
+ *                                                              string must not contain user ID, password, or the Authentication keyword
+ *                                                              (requires ODBC Driver version 17 or above in Linux or macOS). Mutually exclusive
+ *                                                              with 'Authentication'
+ *                              'Authentication'             Authentication mode determined by other keywords
+ *                                  SqlPassword                     Directly authenticate to a SQL Server instance (which may be an Azure instance)
+ *                                                                      using a username and password. The username and password must be passed into
+ *                                                                      the connection string using the UID and PWD keywords.
+ *                                  ActiveDirectoryPassword         Authenticate with an Azure Active Directory identity using a username and
+ *                                                                      password. The username and password must be passed into the connection
+ *                                                                      string using the UID and PWD keywords.
+ *                                  ActiveDirectoryMsi              Authenticate using either a system-assigned managed identity or a user-assigned
+ *                                                                      managed identity (requires ODBC Driver version 17.3.1.1 or above)
+ *                                  ActiveDirectoryServicePrincipal Authenticate using service principal objects (requires ODBC Driver version 17.7 or above)
+ *                              'UID'                        Specifies the User ID to be used when connecting with SQL Server Authentication (duplicado de $DBUser)
+ *                              'PWD'                        Specifies the password associated with the User ID to be used when connecting with SQL
+ *                                                              Server Authentication.
+ *                              'ApplicationIntent'          Declares the application workload type when connecting to a server. Possible values are
+ *                                                              ReadOnly and ReadWrite. Default value ReadWrite
+ *                              'AttachDBFileName'           Specifies which database file the server should attach.
+ *                              'CharacterSet'               Specifies the character set used to send data to the server. Possible values are
+ *                                                              SQLSRV_ENC_CHAR and UTF-8. Default value SQLSRV_ENC_CHAR
+ *                              'ColumnEncryption'           Specifies whether the Always Encrypted feature is enabled or not. Possible values are
+ *                                                              Enabled and Disabled. Default value Disabled
+ *                              'ConnectionPooling'          Specifies whether the connection is assigned from a connection pool (1 or true) or not
+ *                                                              (0 or false). Default value true (1). Has no effect on Linux and MacOs where should
+ *                                                              be set via odbcinst.ini
+ *                              'ConnectRetryCount'          The maximum number of attempts to reestablish a broken connection before giving up. By
+ *                                                              default, a single attempt is made to reestablish a connection when broken. A value
+ *                                                              of 0 means that no reconnection will be attempted. Values: 0-255. Default value 1
+ *                              'ConnectRetryInterval'       The time, in seconds, between attempts to reestablish a connection. The application will
+ *                                                              attempt to reconnect immediately upon detecting a broken connection, and will then
+ *                                                              wait ConnectRetryInterval seconds before trying again. This keyword is ignored if
+ *                                                              ConnectRetryCount is equal to 0. Values 0-60. Default value 10
+ *                              'Database'                   Specifies the name of the database in use for the connection being established. (duplicado de $Database)
+ *                              'FormatDecimals'             Specifies whether to add leading zeroes to decimal strings when appropriate and enables
+ *                                                              the DecimalPlaces option for formatting money types (1 or true). If left false (0),
+ *                                                              the default behavior of returning exact precision and omitting leading zeroes for
+ *                                                              values less than 1 is used. Default value false (0)
+ *                              'DecimalPlaces'              Specifies the decimal places when formatting fetched money values. Integer between 0 and
+ *                                                              4 (inclusive). This option works only when FormatDecimals is true. Any negative
+ *                                                              integer or value more than 4 will be ignored.
+ *                              'Driver'                     Specifies the Microsoft ODBC driver used to communicate with SQL Server. Windows only
+ *                                  ODBC Driver 11 for SQL Server
+ *                                  ODBC Driver 13 for SQL Server
+ *                                  ODBC Driver 17 for SQL Server
+ *                              'Encrypt'                    Specifies whether the communication with SQL Server is encrypted (1 or true) or
+ * unencrypted (0 or false). Default value false (0)
+ *                              'Failover_Partner'           Windows only. Specifies the server and instance of the database's mirror (if enabled and
+ *                                                              configured) to use when the primary server is unavailable.
+ *                              'KeyStoreAuthentication'     Authentication method for accessing Azure Key Vault. Controls what kind of credentials
+ *                                                              are used with KeyStorePrincipalId and KeyStoreSecret.
+ *                                  KeyVaultPassword
+ *                                  KeyVaultClientSecret
+ *                               'KeyStorePrincipalId'       Identifier for the account seeking to access Azure Key Vault. If KeyStoreAuthentication
+ *                                                              is KeyVaultPassword, this value must be an Azure Active Directory username. If
+ *                                                              KeyStoreAuthentication is KeyVaultClientSecret, this value must be an application
+ *                                                              client ID
+ *                               'KeyStoreSecret'            Credential secret for the account seeking to access Azure Key Vault. If
+ *                                                              KeyStoreAuthentication is KeyVaultPassword, this value must be an Azure Active
+ *                                                              Directory password. If KeyStoreAuthentication is KeyVaultClientSecret, this value
+ *                                                              must be an application client secret.
+ *                               'Language'                  Specifies the language of messages returned by the server. The available languages are
+ *                                                              listed in the sys.syslanguages table. Does not affect the language used by the
+ *                                                              drivers themselves, as they are currently available only in English, and it does not
+ *                                                              affect the language of the underlying ODBC driver, whose language is determined by
+ *                                                              the localized version installed on the client system. The default is the language
+ *                                                              set in SQL Server.
+ *                               'LoginTimeout'              Specifies the number of seconds to wait before failing the connection attempt. Default
+ *                                                              value no timeout.
+ *                               'MultipleActiveResultSets'  Disables -false (0)- or explicitly enables -true (1)- support for multiple active result
+ *                                                              sets (MARS). Default value true (1).
+ *                               'MultiSubnetFailover'       Support for AlwaysOn Availability Groups. Possible values are yes and no. Default value
+ *                                                              no. Always specify multiSubnetFailover=yes when connecting to the availability group
+ *                                                              listener of a SQL Server 2012 (11.x) availability group or a SQL Server 2012 (11.x)
+ *                                                              Failover Cluster Instance.
+ *                               'TransparentNetworkIPResolution' Affects the connection sequence when the first resolved IP of the hostname does not
+ *                                                                  respond and there are multiple IPs associated with the hostname. Possible values
+ *                                                                  enabled and disabled. It interacts with MultiSubnetFailover to provide different
+ *                                                                  connection sequences.
+ *                               'QuotedId'                  Specifies whether to use SQL-92 rules for quoted identifiers (1 or true) or to use
+ *                                                              legacy Transact-SQL rules (0 or false). Default value true (1)
+ *                               'ReturnDatesAsStrings'      Retrieves date and time types (datetime, smalldatetime, date, time, datetime2, and
+ *                                                              datetimeoffset) as strings or as PHP types. 1 or true to return date and time types
+ *                                                              as strings. 0 or false to return date and time types as PHP DateTime types. Default
+ *                                                              value false (0).
+ *                               'Scrollable'                Client-side (buffered) and server-side (unbuffered) cursors. Default value 'forward'
+ *                                  SQLSRV_CURSOR_FORWARD           Lets you move one row at a time starting at the first row of the result set
+ *                                                                      until you reach the end of the result set. This is the default cursor type.
+ *                                                                      type. sqlsrv_num_rows returns an error for result sets created with this
+ *                                                                      cursor. 'forward' is the abbreviated form of SQLSRV_CURSOR_FORWARD
+ *                                  SQLSRV_CURSOR_STATIC            Lets you access rows in any order but will not reflect changes in the database.
+ *                                                                      'static' is the abbreviated form of SQLSRV_CURSOR_STATIC
+ *                                  SQLSRV_CURSOR_DYNAMIC           Lets you access rows in any order and will reflect changes in the database.
+ *                                                                      sqlsrv_num_rows returns an error for result sets created with this cursor
+ *                                                                      type. 'dynamic' is the abbreviated form of SQLSRV_CURSOR_DYNAMIC.
+ *                                  SQLSRV_CURSOR_KEYSET            Lets you access rows in any order. However, a keyset cursor does not update the
+ *                                                                      row count if a row is deleted from the table (a deleted row is returned with
+ *                                                                      no values). keyset is the abbreviated form of SQLSRV_CURSOR_KEYSET.
+ *                                  SQLSRV_CURSOR_CLIENT_BUFFERED   Lets you access rows in any order. Creates a client-side cursor query.
+ *                                                                      'buffered' is the abbreviated form of SQLSRV_CURSOR_CLIENT_BUFFERED.
+ *                               'TraceOn'                   Specifies whether ODBC tracing is enabled (1 or true) or disabled (0 or false) for the
+ *                                                              connection being established. Default value false (0)
+ *                               'TraceFile'                 Specifies the path for the file used for trace data.
+ *                               'APP'                       Specifies the application name used in tracing.
+ *                               'WSID'                      Specifies the name of the computer for tracing.
+ *                               'TransactionIsolation'      Specifies the transaction isolation level. DSefault value SQLSRV_TXN_READ_COMMITTED
+ *                                  SQLSRV_TXN_READ_UNCOMMITTED     Specifies that statements can read rows that have been modified by other
+ *                                                                      transactions but not yet committed. Transactions running at the READ
+ *                                                                      UNCOMMITTED level do not issue shared locks to prevent other transactions
+ *                                                                      from modifying data read by the current transaction. It is possible to make
+ *                                                                      dirty reads.
+ *                                  SQLSRV_TXN_READ_COMMITTED       Specifies that statements cannot read data that has been modified but not
+ *                                                                      committed by other transactions. This prevents dirty reads. Data can be
+ *                                                                      changed by other transactions between individual statements within the
+ *                                                                      current transaction, resulting in nonrepeatable reads or phantom data.
+ *                                                                      This option is the SQL Server default.
+ *                                  SQLSRV_TXN_REPEATABLE_READ      Specifies that statements cannot read data that has been modified but not yet
+ *                                                                      committed by other transactions and that no other transactions can modify
+ *                                                                      data that has been read by the current transaction until the current
+ *                                                                      transaction completes. Shared locks are placed on all data read by each
+ *                                                                      statement in the transaction and are held until the transaction completes.
+ *                                                                      Use this option only when necessary.
+ *                                  SQLSRV_TXN_SNAPSHOT             Specifies that data read by any statement in a transaction will be the
+ *                                                                      transactionally consistent version of the data that existed at the start of
+ *                                                                      the transaction. The transaction can only recognize data modifications that
+ *                                                                      were committed before the start of the transaction. Data modifications made
+ *                                                                      by other transactions after the start of the current transaction are not
+ *                                                                      visible to statements executing in the current transaction. The effect is as
+ *                                                                      if the statements in a transaction get a snapshot of the committed data as
+ *                                                                      it existed at the start of the transaction.
+ *                                  SQLSRV_TXN_SERIALIZABLE         1)Statements cannot read data that has been modified but not yet committed by
+ *                                                                      other transactions. 2) No other transactions can modify data that has been
+ *                                                                      read by the current transaction until the current transaction completes. 3)
+ *                                                                      Other transactions cannot insert new rows with key values that would fall in
+ *                                                                      the range of keys read by any statements in the current transaction until
+ *                                                                      the current transaction completes. Range locks are placed in the range of
+ *                                                                      key values that match the search conditions of each statement executed in a
+ *                                                                      transaction. Because concurrency is lower, use this option only when
+ *                                                                      necessary.
+ *                               'TrustServerCertificate'    Specifies whether the client should trust (1 or true) or reject (0 or false) a
+ *                                                              self-signed server certificate. Default value false (0).
+ *                          SQLITE3
+ *                              'flags'                      How to open SQLite. Default value SQLITE3_OPEN_READWRITE|SQLITE3_OPEN_CREATE
+ *                                  SQLITE3_OPEN_READONLY       Open in read-only mode
+ *                                  SQLITE3_OPEN_READWRITE      Open in read-write mode
+ *                                  SQLITE3_OPEN_CREATE         Create database if it does not exist
  * @param mixed $OutData
  * @return int     The connection index
  * @since 0.0.3
@@ -863,54 +858,135 @@ function RegisterDBSystem($InData, $OutData)
     {
         echo date("Y-m-d H:i:s").' -> RegisterDBSystem '.PHP_EOL;
     }
-    /*
-    $InData['System'] = $System;
-    $InData['ServerName'] = $ServerName;
-    $InData['Database'] = $Database;
-    $InData['DBUser'] = $DBUser;
-    $InData['DBPassword'] = $DBPassword;
-    $InData['Options'] = $Options;
 
-    $OutData = array();
-    $SanityCheck = DBSystemSanityCheck($InData, $OutData);
-    if ($SanityCheck === FALSE)
+    //If we support APCU, update APCU KEY
+    //If there is a pool defined, we persist the pool info using APCU (REDIS to come)
+    if (is_int(MIL_POOLEDCONNECTIONS))
     {
-        echo 'Error registering logger. Review parameters. Message:'.$OutData['ReturnValue'].PHP_EOL;
+        if (MIL_ACPU === TRUE)
+        {
+            $PoolExists = TestExistingPool($InData, $OutData);
+            if ($PoolExists === FALSE)
+            {
+                //No previous connection or no similar connection
+                //Register as GLOBAL
+                $ConnectionName = uniqid();
+                $GLOBALS['DB'][$ConnectionName]['System'] = $InData['System'];
+                $GLOBALS['DB'][$ConnectionName]['ServerName'] = $InData['ServerName'];
+                $GLOBALS['DB'][$ConnectionName]['Database'] = $InData['Database'];
+                $GLOBALS['DB'][$ConnectionName]['DBUser'] = $InData['DBUser'];
+                $GLOBALS['DB'][$ConnectionName]['DBPassword'] = $InData['DBPassword'];
+                $GLOBALS['DB'][$ConnectionName]['KeepOpen'] = $InData['KeepOpen'];
+                if (isset($InData['ConnectionLink']))
+                {
+                    $GLOBALS['DB'][$ConnectionName]['ConnectionLink'] = $InData['ConnectionLink'];
+                }
+                if (isset($InData['Options']))
+                {
+                    $GLOBALS['DB'][$ConnectionName]['Options'] = $InData['Options'];
+                }
+                for ($i = 0; $i<MIL_POOLEDCONNECTIONS; $i++)
+                {
+                    $ThePool[$ConnectionName][$i] = $GLOBALS['DB'][$ConnectionName];
+                }
+                $Resultado = apcu_store('DB', $ThePool);
+                if ($Resultado === FALSE)
+                {
+                    $Message = 'Error registering connection over APCU';
+                    AddError($Message);
+                }
+                $OutData['Success'] = TRUE;
+                $OutData['ReturnValue'] = $ConnectionName;
 
-        exit(1);
-    }
-*/
-    //Register the Connection
-    /*if (isset($GLOBALS['DB']))
-    {
-        $FreeCell = count($GLOBALS['DB']);
+                return $ConnectionName;
+            }   //End No previous connection or no similar connection
+            else
+            {
+                $OutData['Success'] = TRUE;
+                $OutData['ReturnValue'] = $PoolExists;
+
+                return $PoolExists;
+            }
+        }
     }
     else
     {
-        $FreeCell = 0;
-    }*/
-    //Make sure there are no collisions on the id
-    //no need usleep(10);
-    $ConnectionName = uniqid();
-    $GLOBALS['DB'][$ConnectionName]['System'] = $InData['System'];
-    $GLOBALS['DB'][$ConnectionName]['ServerName'] = $InData['ServerName'];
-    $GLOBALS['DB'][$ConnectionName]['Database'] = $InData['Database'];
-    $GLOBALS['DB'][$ConnectionName]['DBUser'] = $InData['DBUser'];
-    $GLOBALS['DB'][$ConnectionName]['DBPassword'] = $InData['DBPassword'];
-    $GLOBALS['DB'][$ConnectionName]['KeepOpen'] = $InData['KeepOpen'];
-    if (isset($InData['ConnectionLink']))
-    {
-        $GLOBALS['DB'][$ConnectionName]['ConnectionLink'] = $InData['ConnectionLink'];
+        //No pool defined
+        //Register as GLOBAL
+        $ConnectionName = uniqid();
+        $GLOBALS['DB'][$ConnectionName]['System'] = $InData['System'];
+        $GLOBALS['DB'][$ConnectionName]['ServerName'] = $InData['ServerName'];
+        $GLOBALS['DB'][$ConnectionName]['Database'] = $InData['Database'];
+        $GLOBALS['DB'][$ConnectionName]['DBUser'] = $InData['DBUser'];
+        $GLOBALS['DB'][$ConnectionName]['DBPassword'] = $InData['DBPassword'];
+        $GLOBALS['DB'][$ConnectionName]['KeepOpen'] = $InData['KeepOpen'];
+        if (isset($InData['ConnectionLink']))
+        {
+            $GLOBALS['DB'][$ConnectionName]['ConnectionLink'] = $InData['ConnectionLink'];
+        }
+        if (isset($InData['Options']))
+        {
+            $GLOBALS['DB'][$ConnectionName]['Options'] = $InData['Options'];
+        }
+        if (MIL_ACPU === TRUE)
+        {
+            $Resultado = apcu_store('DB', $GLOBALS['DB']);
+            if ($Resultado === FALSE)
+            {
+                $Message = 'Error registering connection over APCU';
+                AddError($Message);
+            }
+        }
+        $OutData['Success'] = TRUE;
+        $OutData['ReturnValue'] = $PoolExists;
+
+        return $ConnectionName;
     }
-    if (isset($InData['Options']))
+}
+
+/**
+ * TestExistingPool
+ * Avoids duplicating pools on concurrent connections
+ * @param mixed $InData
+ * @param mixed $OutData
+ * @return mixed    FALSE if pool does not exist previously... pool indez otherwise
+ * @since 0.0.4
+ * @see
+ * @todo
+ */
+function TestExistingPool($InData, $OutData)
+{
+    //Fetch potential previous pools to other databases
+    $ThePool = apcu_fetch('DB');
+    if ($ThePool === FALSE)
     {
-        $GLOBALS['DB'][$ConnectionName]['Options'] = $InData['Options'];
+        //No previous pools
+        //$ThePool = array();
+        return FALSE;
+    }
+    else
+    {
+        //Check if we are trying to pool an existing connection
+        // A connection will be considered the same when it shares System, ServerName, Database and User
+        foreach ($ThePool as $Clave => $Valor)
+        {
+            if (($Valor[0]['System'] === $InData['System'])&&($Valor[0]['ServerName'] === $InData['ServerName'])
+                    &&($Valor[0]['Database'] === $InData['Database'])&&($Valor[0]['DBUser'] === $InData['DBUser']))
+            {
+                //It is the same. We return the pools index
+                $OutData['Success'] = TRUE;
+                $OutData['ReturnValue'] = $Clave;
+
+                return $Clave;
+            }
+        }
     }
 
+    //No similiar connection found
     $OutData['Success'] = TRUE;
-    $OutData['ReturnValue'] = $ConnectionName;
+    $OutData['ReturnValue'] = FALSE;
 
-    return $ConnectionName;
+    return FALSE;
 }
 
 /**
@@ -1514,6 +1590,48 @@ function Insert($ConnectionIndex, $Query)
 }
 
 /**
+ * Delete 
+ * deletes info from the database
+ * @param   array   $ConnectionIndex    The connection heap
+ * @param   string  $Query              The query
+ * @return  mixed   Affected rows or FALSE if UPDATE fails
+ * @since   0.0.3
+ * @see     
+ * @todo
+ */
+function Delete($ConnectionIndex, $Query)
+{
+    $ConnectionToUse = TestResurrectConnection($ConnectionIndex);
+    //If there are connection problems, return FALSE
+    if ($ConnectionToUse === FALSE)
+    {
+        $ErrorMessage = 'Unable to make use of connection registered by index: '.$ConnectionIndex;
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    //Now insert
+    //Fucks sentence $EscapedQuery = mysqli_real_escape_string($ConnectionToUse, $Query);
+    if (mysqli_real_query($ConnectionToUse, $Query) === FALSE)
+    {
+        $ErrorMessage = 'Delete error with code '.mysqli_errno($ConnectionToUse).': '.mysqli_error($ConnectionToUse);
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    $ResultSet['AffectedRows'] = mysqli_affected_rows($ConnectionToUse);
+
+    if ($ResultSet['AffectedRows'] === 0)
+    {
+        return NULL;
+    }
+
+    return $ResultSet;
+}
+
+/**
  * Reconnect
  * Connects to a previously sanitized standard or persistent connection
  * @param   array   $ConnectionIndex    The connection heap
@@ -1545,7 +1663,18 @@ function Reconnect($ConnectionIndex)
 
         return FALSE;
     }
-
+    //Prepare data based on pooled/unpooled
+    if (is_int(MIL_POOLEDCONNECTIONS))
+    {
+        //Pooled connection. Get a random one from the pool
+        $RandomConn = random_int(0,4);
+        $ConnectionData = $GLOBALS['DB'][$ConnectionIndex][$RandomConn];
+    }
+    else
+    {
+        //Single connection
+        $ConnectionData = $GLOBALS['DB'][$ConnectionIndex];
+    }
     //Establish options registered
     $InData['System'] = $GLOBALS['DB'][$ConnectionIndex]['System'];
     $InData['ServerName'] = $GLOBALS['DB'][$ConnectionIndex]['ServerName'];
@@ -1595,28 +1724,61 @@ function Reconnect($ConnectionIndex)
  */
 function TestResurrectConnection($ConnectionIndex)
 {
-    //If connection does not exist, return error
+    //If connection does not exist...
     if (!isset($GLOBALS['DB'][$ConnectionIndex]))
     {
-        $ErrorMessage = 'No connection registered by index: '.$ConnectionIndex;
-        ErrorLog($ErrorMessage, E_USER_ERROR);
+        //and no fallback cache exist, return error
+        if (MIL_ACPU === FALSE)
+        {
+            $ErrorMessage = 'No connection registered by index: '.$ConnectionIndex;
+            ErrorLog($ErrorMessage, E_USER_ERROR);
 
-        return FALSE;
+            return FALSE;
+        }
+        else
+        {
+            //But if it does, recreate globals from cache
+            $ConnectionCache = apcu_fetch('DB');
+            if ($ConnectionCache === FALSE)
+            {
+                //Error when recreating globals
+                $ErrorMessage = 'No connection info available on ACPU';
+                ErrorLog($ErrorMessage, E_USER_ERROR);
+
+                return FALSE;
+            }
+            else
+            {
+                $GLOBALS['DB'] = $ConnectionCache;
+            }
+        }
     }
 
     //If it is kept, just use it
     if ($GLOBALS['DB'][$ConnectionIndex]['KeepOpen'] === TRUE)
     {
         //But first, check if it is alive
-        if (property_exists($GLOBALS['DB'][$ConnectionIndex]['ConnectionLink'], "thread_id"))
+        if (is_int(MIL_POOLEDCONNECTIONS))
         {
-            $ConnectionToUse = $GLOBALS['DB'][$ConnectionIndex]['ConnectionLink'];
+            //Pooled connection
+            if (property_exists($GLOBALS['DB'][$ConnectionIndex]['ConnectionLink'], "thread_id"))
+            {
+                $ConnectionToUse = $GLOBALS['DB'][$ConnectionIndex]['ConnectionLink'];
+            }
+        }
+        else
+        {
+            //Single connection
+            if (property_exists($GLOBALS['DB'][$ConnectionIndex]['ConnectionLink'], "thread_id"))
+            {
+                $ConnectionToUse = $GLOBALS['DB'][$ConnectionIndex]['ConnectionLink'];
+            }
         }
     }
     else
     {
         //In any other case, we must reconnect -yes, including persistent connections
-        //Shouldn't give any problems as the copnnection has been checked before
+        //Shouldn't give any problems as the connection has been checked before
         $ConnectionToUse = Reconnect($ConnectionIndex);
     }
 

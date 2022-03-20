@@ -95,7 +95,7 @@ if ($Index4 === FALSE)
 else
 {
     echo 'MySQL Port options connection registered successfully with index '.$Index4.PHP_EOL;
-    var_dump($GLOBALS['DB'][$Index4]['ConnectionLink']);
+    //var_dump($GLOBALS['DB'][$Index4]['ConnectionLink']);
 }
 
 //Keeped up connection using all options except port
@@ -131,7 +131,7 @@ $Index6 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, 
         $FoundRows, $IgnoreSpaces, $InteractiveClient, $UseSSL, $DoNotVerifyServerCert, $Port, $Socket);
 if ($Index6 === FALSE)
 {
-    echo 'MySQL Socket options connection failed to register'.PHP_EOL;
+    echo 'MySQL persistent socket options connection failed to register'.PHP_EOL;
 }
 else
 {
@@ -211,7 +211,7 @@ else
 }
 
 $Query2 = "UPDATE actor SET last_name = 'GUINESS' WHERE actor_id = 1;";
-$Result6 = Update($Index6, $Query2, "OBJECT");
+$Result6 = Update($Index6, $Query2);
 if ($Result6 === FALSE)
 {
     echo "Some error happended updating table".PHP_EOL;
@@ -226,7 +226,7 @@ else
 }
 
 $Query3 = "INSERT INTO actor (first_name, last_name, last_update) VALUES ('DUMMY', 'DUMMY', NOW());";
-$Result7 = Insert($Index0, $Query3, "OBJECT");
+$Result7 = Insert($Index0, $Query3);
 if ($Result7 === FALSE)
 {
     echo "Some error happended inserting into table".PHP_EOL;
@@ -238,4 +238,19 @@ elseif ($Result7 === NULL)
 else
 {
     echo "INSERTING gave ".$Result7['AffectedRows']." rows".PHP_EOL;
+}
+
+$Query4 = "DELETE FROM actor WHERE first_name = 'DUMMY' AND last_name = 'DUMMY';";
+$Result8 = Delete($Index0, $Query4);
+if ($Result8 === FALSE)
+{
+    echo "Some error happended inserting into table".PHP_EOL;
+}
+elseif ($Result8 === NULL)
+{
+    echo "No affected rows on DELETE".PHP_EOL;
+}
+else
+{
+    echo "DELETING gave ".$Result8['AffectedRows']." rows".PHP_EOL;
 }

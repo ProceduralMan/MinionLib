@@ -1,5 +1,16 @@
 # MinionLib Change Log
 
+## Version 0.0.4
+- SQLDB Functions
+  - APCU-aware RegisterMySQLConnection
+  - APCU-aware RegisterDBSystem
+  - TestExistingPool avoids creating redundant pools on concurrent ussage
+  - APCU-aware TestResurrectConnection
+  - APCU-aware Read
+  - APCU-aware Update
+  - APCU-aware Insert
+  - Delete: deletes info from the database
+
 ## Version 0.0.3
 - Fix php-cs config
 - Data Validation Functions
@@ -21,6 +32,7 @@
   - RegisterDBSystem: registers a DB Connection
   - RegisterMySQLConnection: front-end to register a connection to MySQL
   - TestResurrectConnection: checks connection health and reconnects if necessary
+
 ## Version 0.0.2
 - Roadmap info
 - Composer integration
