@@ -1,4 +1,26 @@
 # MinionLib Change Log
+## Version 0.0.6
+- Bug Fixes:
+  - Caching connection objets cripples them, due to a serialization issue.
+    Connection pool eliminated
+- New versions of the following functions:
+  - RegisterDBSystem
+  - DBSystemSanityCheck
+  - RegisterMySQLConnection
+- SQLDBFunctions
+  - IsLegitUpdate parses UPDATE sentence to make sure it is safe and sound
+  - IsLegitInsert parses INSERT sentence to make sure it is safe and sound
+  - IsLegitDelete parses DELETE sentence to make sure it is safe and sound
+  - StripValuesFromQuery takes out values than can contain SQL Operators
+- Mathematical Functions
+  - IsEven validates if the number is even
+  - IsOdd validates if the number is odd
+
+## Version 0.0.5
+- SQLDB Functions
+  - IsLegitRead parses SELECT sentence to make sure it is safe and sound
+- Bug Fixes:
+  - Read makes use of a fixed-size pool instead of a define-controlled one
 
 ## Version 0.0.4
 - SQLDB Functions

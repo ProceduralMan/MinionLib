@@ -29,7 +29,7 @@
  * 2022-03-03 17:28:17 -> ProcessError LogRecord Array ( [ServerDate] => 2022-03-03 17:28:17 UTC [LocalDate] => 2022-03-03 18:28:17 CET [LogLevel] => 400 [EventText] => Error checking MySQL connection: Invalid parameters->ServerName:, Database:, DBUser:, ) ->exits OK 
  * 2022-03-03 17:28:17 -> NotifyError For no loggers, no notifications
 
-MySQL with some server options connection failed to register
+Da error al conectar, bien por que la conexion se serializa al guardarla en el array o bien al meterla en el ACPU.... hay que testarlo
 
  */
 require_once __DIR__.'/../MinionSetup.php';
@@ -80,14 +80,13 @@ $DBPassword = '82CX39t3gOnf2BHOxPmE';
                     //Connection using some server options
                     echo '<h2>Testing w/ some Server Options</h2>'.PHP_EOL;
                     echo '<br>'.$ServerName.'<br><br>';
-                    $KeepOpen = FALSE;
                     $Persistent = FALSE;
                     $ConnectionTimeout = 60;
                     $CommandTimeout = 30;
                     $UseLocalInfile = NULL;
                     $InitCommand = NULL;
                     $Charset = 'utf8mb4';
-                    $Index1 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $KeepOpen, $Persistent, $ConnectionTimeout,
+                    $Index1 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $Persistent, $ConnectionTimeout,
                             $CommandTimeout, $UseLocalInfile, $InitCommand, $Charset);
                     if ($Index1 === FALSE)
                     {
@@ -98,35 +97,21 @@ $DBPassword = '82CX39t3gOnf2BHOxPmE';
                         echo '<p>MySQL with some server options connection registered successfully with index '.$Index1.'</p>'.PHP_EOL;
                         apcu_clear_cache();
                     }
-                    //Connection using all server options
-                    echo '<h2>Testing all Server Options</h2>'.PHP_EOL;
+                    //Connection using optionsfile
+                    echo '<h2>Testing using optionsfile</h2>'.PHP_EOL;
                     $OptionsFile = __DIR__.'/dummy-my.cnf';
                     $DefaultGroup = NULL;
                     $ServerPublicKey = NULL;
-                    $Index2 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $KeepOpen, $Persistent, $ConnectionTimeout,
+                    $Index2 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $Persistent, $ConnectionTimeout,
                             $CommandTimeout, $UseLocalInfile, $InitCommand, $Charset, $OptionsFile, $DefaultGroup, $ServerPublicKey);
                     if ($Index2 === FALSE)
                     {
-                        echo '<p>MySQL using all server options connection failed to register</p>'.PHP_EOL;
+                        echo '<p>MySQL using optionsfile connection failed to register</p>'.PHP_EOL;
                     }
                     else
                     {
-                        echo '<p>MySQL using all server options connection registered successfully with index '.$Index2.'</p>'.PHP_EOL;
+                        echo '<p>MySQL using optionsfile connection registered successfully with index '.$Index2.'</p>'.PHP_EOL;
                         apcu_clear_cache();
-                    }
-                    echo '<h2>Testing Keeped up connection using all server options</h2>'.PHP_EOL;
-                    //Keeped up connection using all server options
-                    $KeepOpen = TRUE;
-                    $Index3 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $KeepOpen, $Persistent, $ConnectionTimeout,
-                        $CommandTimeout, $UseLocalInfile, $InitCommand, $Charset, $OptionsFile, $DefaultGroup, $ServerPublicKey);
-                    if ($Index3 === FALSE)
-                    {
-                        echo '<p>MySQL keeped up using all server options connection failed to register</p>'.PHP_EOL;
-                    }
-                    else
-                    {
-                        echo '<p>MySQL keeped up using all server options connection registered successfully with index '.$Index3.'</p>'.PHP_EOL;
-                        //var_dump($GLOBALS['DB'][$Index3]['ConnectionLink']);
                     }
 
                     //Keeped up connection using all options except socket
@@ -140,7 +125,7 @@ $DBPassword = '82CX39t3gOnf2BHOxPmE';
                     $DoNotVerifyServerCert = TRUE;
                     $Port = 3306;
 
-                    $Index4 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $KeepOpen, $Persistent, $ConnectionTimeout,
+                    $Index4 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $Persistent, $ConnectionTimeout,
                             $CommandTimeout, $UseLocalInfile, $InitCommand, $Charset, $OptionsFile, $DefaultGroup, $ServerPublicKey, $CompressionProtocol,
                             $FoundRows, $IgnoreSpaces, $InteractiveClient, $UseSSL, $DoNotVerifyServerCert, $Port);
                     if ($Index4 === FALSE)
@@ -153,9 +138,9 @@ $DBPassword = '82CX39t3gOnf2BHOxPmE';
                         //var_dump($GLOBALS['DB'][$Index4]['ConnectionLink']);
                         apcu_clear_cache();
                     }
-                    echo '<h2>Testing Keeped up connection using all server options except port</h2>'.PHP_EOL;
 
                     //Keeped up connection using all options except port
+                    echo '<h2>Testing Keeped up connection using all server options except port</h2>'.PHP_EOL;
                     $ServerName = 'localhost';
                     $CompressionProtocol = TRUE;
                     $FoundRows = TRUE;
@@ -167,7 +152,7 @@ $DBPassword = '82CX39t3gOnf2BHOxPmE';
                     //Standard socket location on Ubuntu systems... will surely change on other distributions
                     $Socket = '/var/run/mysqld/mysqld.sock';
 
-                    $Index5 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $KeepOpen, $Persistent, $ConnectionTimeout,
+                    $Index5 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $Persistent, $ConnectionTimeout,
                             $CommandTimeout, $UseLocalInfile, $InitCommand, $Charset, $OptionsFile, $DefaultGroup, $ServerPublicKey, $CompressionProtocol,
                             $FoundRows, $IgnoreSpaces, $InteractiveClient, $UseSSL, $DoNotVerifyServerCert, $Port, $Socket);
                     if ($Index5 === FALSE)
@@ -183,9 +168,9 @@ $DBPassword = '82CX39t3gOnf2BHOxPmE';
 
                     //Persistent socket connection
                     echo '<h2>Testing persistent socket connection</h2>'.PHP_EOL;
-                    $KeepOpen = FALSE;
                     $Persistent = TRUE;
-                    $Index6 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $KeepOpen, $Persistent, $ConnectionTimeout,
+                    $Socket = '/var/run/mysqld/mysqld.sock';
+                    $Index6 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $Persistent, $ConnectionTimeout,
                             $CommandTimeout, $UseLocalInfile, $InitCommand, $Charset, $OptionsFile, $DefaultGroup, $ServerPublicKey, $CompressionProtocol,
                             $FoundRows, $IgnoreSpaces, $InteractiveClient, $UseSSL, $DoNotVerifyServerCert, $Port, $Socket);
                     if ($Index6 === FALSE)
@@ -195,8 +180,12 @@ $DBPassword = '82CX39t3gOnf2BHOxPmE';
                     else
                     {
                         echo '<p>MySQL persistent socket options connection registered successfully with index '.$Index6.'</p>'.PHP_EOL;
+                        //apcu_clear_cache();
                     }
                     //sI oK, TEST APCU POR EL REGISTRO. SI FALLO, ACABAMOS
+
+                    //Sync GLOBALS and APCU
+                    $GLOBALS['DB'] = apcu_fetch('DB');
                 }
                 ?>
                 <h2>ACPU connections registered</h2>

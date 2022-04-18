@@ -17,6 +17,7 @@ $Database = 'sakila';
 $DBUser = 'appuser';
 $DBPassword = '82CX39t3gOnf2BHOxPmE';
 //Simple, standard connection to sakila standard MySQL Test Database. Just compulsory parameters
+echo 'Simple, standard connection to sakila standard MySQL Test Database. Just compulsory parameters'.PHP_EOL;
 $Index0 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword);
 if ($Index0 === FALSE)
 {
@@ -28,14 +29,14 @@ else
 }
 
 //Connection using some server options
-$KeepOpen = FALSE;
+echo PHP_EOL.PHP_EOL.'Connection using some server options'.PHP_EOL;
 $Persistent = FALSE;
 $ConnectionTimeout = 60;
 $CommandTimeout = 30;
 $UseLocalInfile = NULL;
 $InitCommand = NULL;
 $Charset = 'utf8mb4';
-$Index1 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $KeepOpen, $Persistent, $ConnectionTimeout,
+$Index1 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $Persistent, $ConnectionTimeout,
         $CommandTimeout, $UseLocalInfile, $InitCommand, $Charset);
 if ($Index1 === FALSE)
 {
@@ -46,36 +47,25 @@ else
     echo 'MySQL with some server options connection registered successfully with index '.$Index1.PHP_EOL;
 }
 
-//Connection using all server options
+//Connection using optionsfile
+echo PHP_EOL.PHP_EOL.'Connection using optionsfile'.PHP_EOL;
 $OptionsFile = __DIR__.'/dummy-my.cnf';
 $DefaultGroup = NULL;
 $ServerPublicKey = NULL;
-$Index2 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $KeepOpen, $Persistent, $ConnectionTimeout,
+$Index2 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $Persistent, $ConnectionTimeout,
         $CommandTimeout, $UseLocalInfile, $InitCommand, $Charset, $OptionsFile, $DefaultGroup, $ServerPublicKey);
 if ($Index2 === FALSE)
 {
-    echo 'MySQL using all server options connection failed to register'.PHP_EOL;
+    echo 'MySQL using optionsfile connection failed to register'.PHP_EOL;
 }
 else
 {
-    echo 'MySQL using all server options connection registered successfully with index '.$Index2.PHP_EOL;
+    echo 'MySQL using optionsfile connection registered successfully with index '.$Index2.PHP_EOL;
 }
 
-//Keeped up connection using all server options
-$KeepOpen = TRUE;
-$Index3 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $KeepOpen, $Persistent, $ConnectionTimeout,
-    $CommandTimeout, $UseLocalInfile, $InitCommand, $Charset, $OptionsFile, $DefaultGroup, $ServerPublicKey);
-if ($Index3 === FALSE)
-{
-    echo 'MySQL keeped up using all server options connection failed to register'.PHP_EOL;
-}
-else
-{
-    echo 'MySQL keeped up using all server options connection registered successfully with index '.$Index3.PHP_EOL;
-    var_dump($GLOBALS['DB'][$Index3]['ConnectionLink']);
-}
 
-//Keeped up connection using all options except socket
+//Connection using all options except socket
+echo PHP_EOL.PHP_EOL.'Connection using all options except socket'.PHP_EOL;
 $ServerName = '127.0.0.1';
 $CompressionProtocol = TRUE;
 $FoundRows = TRUE;
@@ -85,7 +75,7 @@ $UseSSL = TRUE;
 $DoNotVerifyServerCert = TRUE;
 $Port = 3306;
 
-$Index4 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $KeepOpen, $Persistent, $ConnectionTimeout,
+$Index4 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $Persistent, $ConnectionTimeout,
         $CommandTimeout, $UseLocalInfile, $InitCommand, $Charset, $OptionsFile, $DefaultGroup, $ServerPublicKey, $CompressionProtocol,
         $FoundRows, $IgnoreSpaces, $InteractiveClient, $UseSSL, $DoNotVerifyServerCert, $Port);
 if ($Index4 === FALSE)
@@ -98,7 +88,8 @@ else
     //var_dump($GLOBALS['DB'][$Index4]['ConnectionLink']);
 }
 
-//Keeped up connection using all options except port
+//Connection using all options except port
+echo PHP_EOL.PHP_EOL.'Connection using all options except port'.PHP_EOL;
 $ServerName = 'localhost';
 $CompressionProtocol = TRUE;
 $FoundRows = TRUE;
@@ -110,7 +101,7 @@ $Port = NULL;
 //Standard socket location on Ubuntu systems... will surely change on other distributions
 $Socket = '/var/run/mysqld/mysqld.sock';
 
-$Index5 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $KeepOpen, $Persistent, $ConnectionTimeout,
+$Index5 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $Persistent, $ConnectionTimeout,
         $CommandTimeout, $UseLocalInfile, $InitCommand, $Charset, $OptionsFile, $DefaultGroup, $ServerPublicKey, $CompressionProtocol,
         $FoundRows, $IgnoreSpaces, $InteractiveClient, $UseSSL, $DoNotVerifyServerCert, $Port, $Socket);
 if ($Index5 === FALSE)
@@ -120,13 +111,12 @@ if ($Index5 === FALSE)
 else
 {
     echo 'MySQL Socket options connection registered successfully with index '.$Index5.PHP_EOL;
-    var_dump($GLOBALS['DB'][$Index5]['ConnectionLink']);
 }
 
 //Persistent socket connection
-$KeepOpen = FALSE;
+echo PHP_EOL.PHP_EOL.'Persistent socket connection'.PHP_EOL;
 $Persistent = TRUE;
-$Index6 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $KeepOpen, $Persistent, $ConnectionTimeout,
+$Index6 = RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $Persistent, $ConnectionTimeout,
         $CommandTimeout, $UseLocalInfile, $InitCommand, $Charset, $OptionsFile, $DefaultGroup, $ServerPublicKey, $CompressionProtocol,
         $FoundRows, $IgnoreSpaces, $InteractiveClient, $UseSSL, $DoNotVerifyServerCert, $Port, $Socket);
 if ($Index6 === FALSE)
@@ -140,7 +130,7 @@ else
 
 //read from simple connection
 $Query1 = "SELECT * FROM actor LIMIT 3";
-$Result1 = Read($Index1, $Query1, "OBJECT");
+$Result1 = Read($Index6, $Query1, "OBJECT");
 if ($Result1 === FALSE)
 {
     echo "Some error happended while OBJECT reading".PHP_EOL;
@@ -154,7 +144,7 @@ else
     echo "OBJECT reading gave ".$Result1['Rows']." rows".PHP_EOL;
 }
 
-$Result2 = Read($Index2, $Query1, "ARRAY");
+$Result2 = Read($Index6, $Query1, "ARRAY");
 if ($Result2 === FALSE)
 {
     echo "Some error happended while ARRAY reading".PHP_EOL;
@@ -168,7 +158,7 @@ else
     echo "ARRAY reading gave ".$Result2['Rows']." rows".PHP_EOL;
 }
 
-$Result3 = Read($Index3, $Query1, "ASSOC");
+$Result3 = Read($Index6, $Query1, "ASSOC");
 if ($Result3 === FALSE)
 {
     echo "Some error happended while ASSOC reading".PHP_EOL;
@@ -182,7 +172,7 @@ else
     echo "ASSOC reading gave ".$Result3['Rows']." rows".PHP_EOL;
 }
 
-$Result4 = Read($Index4, $Query1, "BOTH");
+$Result4 = Read($Index6, $Query1, "BOTH");
 if ($Result4 === FALSE)
 {
     echo "Some error happended while BOTH reading".PHP_EOL;
@@ -196,7 +186,7 @@ else
     echo "BOTH reading gave ".$Result4['Rows']." rows".PHP_EOL;
 }
 
-$Result5 = Read($Index5, $Query1, "JSON");
+$Result5 = Read($Index6, $Query1, "JSON");
 if ($Result5 === FALSE)
 {
     echo "Some error happended while JSON reading".PHP_EOL;

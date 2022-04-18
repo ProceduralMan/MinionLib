@@ -42,9 +42,6 @@ define("LOCALTZ", "Europe/Madrid");
 //Location to store Data Plug CSVs
 define("DATA_PLUG_STORAGE", "/home/masmanda");
 
-//Use to define DB pooled connections. FALSE means unpooled while an int will open that number of connections
-define("MIL_POOLEDCONNECTIONS", 5);
-
 //Use of ACPU or REDIS caches..
 define("MIL_ACPU", TRUE);
 define("MIL_REDIS", FALSE); //STILL unsuported... uneffectual
@@ -57,6 +54,7 @@ require_once 'ErrorHandling/ErrorHandling.php';
 require_once 'Configuration/Configuration.php';
 //Uncomment to activate
 require_once 'TextAndString/TextAndString.php';
+require_once 'Mathematical/Mathematical.php';
 //Uncomment to activate. Requires ErrorHandling and TextAndString
 require 'Database/SQLDB.php';
 //Uncomment to activate

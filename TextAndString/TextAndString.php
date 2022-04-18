@@ -4,6 +4,8 @@
  * TextAndString
  * Text ans String utility functions
  *
+ * - Enclosure detects if the string is enclosed by something
+ * - IsValidUTF8Text validates if the text complies with UTF-8
  * @author ProceduralMan <proceduralman@gmail.com>
  * @copyright 2021
  * @version 1.0 initial version
@@ -35,35 +37,42 @@ function Enclosure($String)
     $FirstChar = mb_substr($String, 0, 1, 'UTF-8');
     $LastChar = mb_substr($String, -1, 1, 'UTF-8');
     //echo 'String='.$String.', FC='.$FirstChar.', LC='.$LastChar.'=>';
-    if (DEBUGMODE) {
+    if (DEBUGMODE)
+    {
         echo date("Y-m-d H:i:s").' -> Enclosure FC='.$FirstChar.', LC='.$LastChar.PHP_EOL;
     }
 
     //Is it enclosed by single quotes?
     //if (preg_match("/('[^'\\\\]*(?:\\\\.[^'\\\\]*)*')/", $String))
-    if (($FirstChar === "'")&&($LastChar === "'")) {
+    if (($FirstChar === "'")&&($LastChar === "'"))
+    {
         return MIL_QUOTES_SINGLE;
     }
     //Is it enclosed by double quotes?
     //if (preg_match('/^(["\']).*\1$/m', $String))
-    if (($FirstChar === '"')&&($LastChar === '"')) {
+    if (($FirstChar === '"')&&($LastChar === '"'))
+    {
         return MIL_QUOTES_DOUBLE;
     }
     //Is it enclosed by backticks?
     //if (preg_match('/^([`\']).*\1$/m', $String))
-    if (($FirstChar === "`")&&($LastChar === "`")) {
+    if (($FirstChar === "`")&&($LastChar === "`"))
+    {
         return MIL_QUOTES_BACKTICK;
     }
     //Is it enclosed by parentheses?
-    if (($FirstChar === "(")&&($LastChar === ")")) {
+    if (($FirstChar === "(")&&($LastChar === ")"))
+    {
         return MIL_QUOTES_PARENTHESES;
     }
     //Is it enclosed by braces?
-    if (($FirstChar === "{")&&($LastChar === "}")) {
+    if (($FirstChar === "{")&&($LastChar === "}"))
+    {
         return MIL_QUOTES_BRACES;
     }
     //Is it enclosed by brackets?
-    if (($FirstChar === "[")&&($LastChar === "]")) {
+    if (($FirstChar === "[")&&($LastChar === "]"))
+    {
         return MIL_QUOTES_BRACES;
     }
 
@@ -80,9 +89,15 @@ function Enclosure($String)
  */
 function IsValidUTF8Text($Text)
 {
-    if (mb_check_encoding($Text, 'UTF-8')) {
-        return true;
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsValidUTF8Text'.PHP_EOL;
     }
 
-    return false;
+    if (mb_check_encoding($Text, 'UTF-8'))
+    {
+        return TRUE;
+    }
+
+    return FALSE;
 }

@@ -3,13 +3,19 @@
 /*
  * SQLDB
  * SQL Database Management the Minion way
- *
+ * The initial strategy of keeping an internal 'pool' of connections to reuse on the webpage did not survive reality check.
+ * While it worked ok on CLI environments, the use on web sites required to cache the pool and the Databse connection is a 
+ * resource object and thus non-cacheable.
+ * The new strategy calls for atomic ops -open-make use of-close- and let the system underneath take care of pooling -persistent
+ * connection on mysql case, ODBC pooling configuration on sqlsrv...-
  * @author ProceduralMan <proceduralman@gmail.com>
- * @copyright 2021
+ * @copyright 2021-2022
  * @version 1.0 initial version
  * @package Minion
  * @todo INCLUIR TODAS LAS BASES DE DATOS DE FICHERO TIPO BERKELEYDB https://www.php.net/manual/es/intro.dba.php
  * @todo La de base de datos debiera exponer solo cuatro funciones, Lee(Devuelve array asociativo), Actualiza(T/F), Inserta(T/F), InsertaConID(Devuelve ID)=> esta debiera incluir el SELECT SCOPE_IDENTITY();, chequear que fuera INSERT... etc etc. Tal vez tb un ¿tienefilas?
+ * @todo 1) Eliminar el keep open de todas las funciones => HECHO 2) Deprecar el registro y el sanity check 
+ * @todo 3) Hacer atómicas las funciones e incluir los valores de registro en un array de las mismas 4) Contar todo eso en los MD y generar v0.0.6
  * @see
  * MySQL Info
  *      https://stackoverflow.com/questions/45080641/specifying-socket-option-on-mysqli-connect
@@ -62,7 +68,6 @@ $GLOBALS['DB'] = NULL;
  * @param string    $Database               The database name
  * @param string    $DBUser                 The user
  * @param string    $DBPassword             The password
- * @param boolean   $KeepOpen               Keep the connection link open on the registry
  * @param boolean   $Persistent             Flag to make a persistent connection
  * @param int       $ConnectionTimeout      Controls connection timeout in seconds
  * @param int       $CommandTimeout         Controls command execution result timeout in seconds
@@ -85,7 +90,7 @@ $GLOBALS['DB'] = NULL;
  * @see
  * @todo
  */
-function RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $KeepOpen = FALSE, $Persistent = FALSE, $ConnectionTimeout = NULL,
+function RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $Persistent = FALSE, $ConnectionTimeout = NULL,
     $CommandTimeout = NULL, $UseLocalInfile = NULL, $InitCommand = NULL, $Charset = NULL, $OptionsFile = NULL, $DefaultGroup = NULL, $ServerPublicKey = NULL,
     $CompressionProtocol = NULL, $FoundRows = NULL, $IgnoreSpaces = NULL, $InteractiveClient = NULL, $UseSSL = NULL, $DoNotVerifyServerCert = NULL,
     $Port = NULL, $Socket = NULL)
@@ -95,10 +100,153 @@ function RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $
         echo date("Y-m-d H:i:s").' -> RegisterMySQLConnection '.PHP_EOL;
     }
 
-    //If persistent, cannot be kept-open -as it already is by the system-
-    if ($Persistent == TRUE)
+    //Prepare compulsory Data
+    $InData['System'] = MIL_MYSQL;
+    $InData['Database'] = $Database;
+    $InData['DBUser'] = $DBUser;
+    $InData['DBPassword'] = $DBPassword;
+    //var_dump($Persistent);
+    $InData['Options']['Persistent'] = $Persistent;
+    if ($Persistent === TRUE)
     {
-        $KeepOpen = FALSE;
+        $InData['ServerName'] = 'p:'.$ServerName;
+    }
+    else
+    {
+        $InData['ServerName'] = $ServerName;
+    }
+    //Prepare optional Data
+    if (!is_null($ConnectionTimeout))
+    {
+        $InData['Options']['ConnectionTimeout'] = $ConnectionTimeout;
+    }
+    if (!is_null($CommandTimeout))
+    {
+        $InData['Options']['CommandTimeout'] = $CommandTimeout;
+    }
+    if (!is_null($UseLocalInfile))
+    {
+        $InData['Options']['UseLocalInfile'] = $UseLocalInfile;
+    }
+    if (!is_null($InitCommand))
+    {
+        $InData['Options']['InitCommand'] = $InitCommand;
+    }
+    if (!is_null($Charset))
+    {
+        $InData['Options']['Charset'] = $Charset;
+    }
+    if (!is_null($OptionsFile))
+    {
+        $InData['Options']['OptionsFile'] = $OptionsFile;
+    }
+    if (!is_null($DefaultGroup))
+    {
+        $InData['Options']['DefaultGroup'] = $DefaultGroup;
+    }
+    if (!is_null($ServerPublicKey))
+    {
+        $InData['Options']['ServerPublicKey'] = $ServerPublicKey;
+    }
+    if (!is_null($CompressionProtocol))
+    {
+        $InData['Options']['CompressionProtocol'] = $CompressionProtocol;
+    }
+    if (!is_null($FoundRows))
+    {
+        $InData['Options']['FoundRows'] = $FoundRows;
+    }
+    if (!is_null($IgnoreSpaces))
+    {
+        $InData['Options']['IgnoreSpaces'] = $IgnoreSpaces;
+    }
+    if (!is_null($InteractiveClient))
+    {
+        $InData['Options']['InteractiveClient'] = $InteractiveClient;
+    }
+    if (!is_null($UseSSL))
+    {
+        $InData['Options']['UseSSL'] = $UseSSL;
+    }
+    if (!is_null($DoNotVerifyServerCert))
+    {
+        $InData['Options']['DoNotVerifyServerCert'] = $DoNotVerifyServerCert;
+    }
+    if (!is_null($Port))
+    {
+        $InData['Options']['Port'] = $Port;
+    }
+    if (!is_null($Socket))
+    {
+        $InData['Options']['Socket'] = $Socket;
+    }
+    $OutData = array();
+    $Result = DBSystemSanityCheck($InData, $OutData);
+    if ($Result === FALSE)
+    {
+        $ErrorMessage = 'Error checking MySQL connection: '.$OutData['ReturnValue'];
+        echo $ErrorMessage.PHP_EOL;
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+    else
+    {
+        $RegisterResult = RegisterDBSystem($InData, $OutData);
+        if ($RegisterResult === FALSE)
+        {
+            $ErrorMessage = 'Error registering MySQL connection: '.$OutData['ReturnValue'];
+            echo $ErrorMessage.PHP_EOL;
+            ErrorLog($ErrorMessage, E_USER_ERROR);
+
+            return FALSE;
+        }
+        else
+        {
+            return $RegisterResult;
+        }
+    }
+}
+
+ /**
+  * OldRegisterMySQLConnection
+  * Front-end function to register a connection to MySQL.
+  * When used on web pages it should be caled just once at session creation.
+  * The function RegisterDBSystem includes safety mechanisms to avoid create multiple sibling pools on concurrent usage
+  * @since 0.0.3
+  * @see
+  * @todo
+  * @deprecated  will be substituted by an atomic variant
+  * @param mixed $ServerName
+  * @param mixed $Database
+  * @param mixed $DBUser
+  * @param mixed $DBPassword
+  * @param mixed $Persistent
+  * @param null|mixed $ConnectionTimeout
+  * @param null|mixed $CommandTimeout
+  * @param null|mixed $UseLocalInfile
+  * @param null|mixed $InitCommand
+  * @param null|mixed $Charset
+  * @param null|mixed $OptionsFile
+  * @param null|mixed $DefaultGroup
+  * @param null|mixed $ServerPublicKey
+  * @param null|mixed $CompressionProtocol
+  * @param null|mixed $FoundRows
+  * @param null|mixed $IgnoreSpaces
+  * @param null|mixed $InteractiveClient
+  * @param null|mixed $UseSSL
+  * @param null|mixed $DoNotVerifyServerCert
+  * @param null|mixed $Port
+  * @param null|mixed $Socket
+  */
+function OldRegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $Persistent = FALSE, $ConnectionTimeout = NULL,
+    $CommandTimeout = NULL, $UseLocalInfile = NULL, $InitCommand = NULL, $Charset = NULL, $OptionsFile = NULL, $DefaultGroup = NULL, $ServerPublicKey = NULL,
+    $CompressionProtocol = NULL, $FoundRows = NULL, $IgnoreSpaces = NULL, $InteractiveClient = NULL, $UseSSL = NULL, $DoNotVerifyServerCert = NULL,
+    $Port = NULL, $Socket = NULL)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> RegisterMySQLConnection '.PHP_EOL;
     }
 
     //Prepare compulsory Data
@@ -107,7 +255,6 @@ function RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $
     $InData['Database'] = $Database;
     $InData['DBUser'] = $DBUser;
     $InData['DBPassword'] = $DBPassword;
-    $InData['KeepOpen'] = $KeepOpen;
     $InData['Options']['Persistent'] = $Persistent;
 
     //Prepare optional Data
@@ -187,10 +334,6 @@ function RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $
     }
     else
     {
-        if ($KeepOpen === TRUE)
-        {
-            $InData['ConnectionLink'] = $OutData['ConnectionLink'];
-        }
         //If there is a pool defined, we persist the pool info using APCU (REDIS to come)
         if (is_int(MIL_POOLEDCONNECTIONS))
         {
@@ -224,14 +367,13 @@ function RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $
 }
 
 /**
- * DBSystemSanityCheck checks that all needed configuration is in place
+ * DBSystemSanityCheck checks that all needed configuration is in place. Just formal checking, no pre-connection
  * @param array $InData
  *                      'System'                The chosen DB System: CUBRID, DBASE, FIREBIRD, DB2(Including CLOUDSCAPE and DERBY), MYSQL, ORACLE, POSTGRE, SQLITE or SQLSRV
  *                      'ServerName'            The chosen server. 'localhost' or nothing for SQLLite
  *                      'Database'              The Database
  *                      'DBUser'                The User
  *                      'DBPassword'            The Password
- *                      'KeepOpen'              Whether to keep the connection open on the registry or not
  *                      'Options'               System-specific options
  *                                      MySQL
  *                                          'Persistent'                Makes a connection persistent by prepending p: to the hostname
@@ -303,6 +445,333 @@ function DBSystemSanityCheck($InData, &$OutData)
         print_r($InData);
     }
 
+    switch ($InData['System'])
+    {
+        case "MYSQL":
+            //Check Parameters
+            $AllGood = TRUE;
+            $InvalidParameters = '';
+            foreach ($InData as $Key => $Value)
+            {
+                if ($Key !== 'System')
+                {
+                    switch ($Key) {
+                        case 'ServerName':
+                            if ($InData['Options']['Persistent'] === TRUE)
+                            {
+                                $RealHostname = substr($Value, 2);
+                            }
+                            else
+                            {
+                                $RealHostname = $Value;
+                            }
+                            $TestOption = IsValidHost($RealHostname);
+                            if ($TestOption === FALSE)
+                            {
+                                $AllGood = $TestOption;
+                                $InvalidParameters .= 'ServerName:'.$RealHostname.', ';
+                            }
+                            break;
+                        case 'Database':
+                            $TestOption = IsValidMySQLName($Value);
+                            if ($TestOption === FALSE)
+                            {
+                                $AllGood = $TestOption;
+                                $InvalidParameters .= 'Database:'.$Value.', ';
+                            }
+                            break;
+                        case 'DBUser':
+                            $TestOption = IsValidMySQLUser($Value);
+                            if ($TestOption === FALSE)
+                            {
+                                $AllGood = $TestOption;
+                                $InvalidParameters .= 'DBUser:'.$Value.', ';
+                            }
+                            break;
+                        case 'DBPassword':
+                            //Paswords are text fields so virtually limitless... just check if is pure UTF-8
+                            $TestOption = IsValidUTF8Text($Value);
+                            if ($TestOption === FALSE)
+                            {
+                                $AllGood = $TestOption;
+                                $InvalidParameters .= 'DBPassword:'.$Value.', ';
+                            }
+                            break;
+                        case 'Options':
+                            //Toca un inner foreach para cada una de las opciones
+                            foreach ($InData[$Key] as $OptionKey => $OptionValue)
+                            {
+                                switch ($OptionKey)
+                                {
+                                    case 'Persistent':
+                                        //As here hostname is correct, if persistent is enabled, we prepend the p:
+                                        $TestOption = is_bool($OptionValue);
+                                        if ($TestOption === FALSE)
+                                        {
+                                            $AllGood = $TestOption;
+                                            $InvalidParameters .= 'Persistent:'.var_dump($OptionValue).', ';
+                                        }
+                                        /*
+                                         * Already included on the registering... is more visible there
+                                        else
+                                        {
+                                            if ($OptionValue === TRUE)
+                                            {
+                                                $InData['ServerName'] = 'p:'.$InData['ServerName'];
+                                            }
+                                        }
+                                         * 
+                                         */
+                                        break;
+                                    case 'ConnectionTimeout':
+                                        //Any int seems valid. The bigger the timeout the sooner server resources might be exhausted
+                                        $TestOption = is_int($OptionValue);
+                                        if ($TestOption === FALSE)
+                                        {
+                                            $AllGood = $TestOption;
+                                            $InvalidParameters .= 'ConnectionTimeout:'.$OptionValue.', ';
+                                        }
+                                        break;
+                                    case 'CommandTimeout':
+                                        //Any int seems valid. The bigger the timeout the sooner server resources might be exhausted
+                                        $TestOption = is_int($OptionValue);
+                                        if ($TestOption === FALSE)
+                                        {
+                                            $AllGood = $TestOption;
+                                            $InvalidParameters .= 'CommandTimeout:'.$OptionValue.', ';
+                                        }
+                                        break;
+                                    case 'UseLocalInfile':
+                                        //Admits TRUE, defaults on FALSE
+                                        //Server var local_infile must be set to ON to use local infiles
+                                        //@see https://dev.mysql.com/doc/refman/8.0/en/server-system-variables.html#sysvar_local_infile
+                                        $TestOption = is_bool($OptionValue);
+                                        if ($TestOption === FALSE)
+                                        {
+                                            $AllGood = $TestOption;
+                                            $InvalidParameters .= 'UseLocalInfile:'.var_dump($OptionValue).', ';
+                                        }
+                                        break;
+                                    case 'InitCommand':
+                                        //Any string will do
+                                        $TestOption = is_string($OptionValue);
+                                        if ($TestOption === FALSE)
+                                        {
+                                            $AllGood = $TestOption;
+                                            $InvalidParameters .= 'InitCommand:'.$OptionValue.', ';
+                                        }
+                                        break;
+                                    case 'Charset':
+                                        //Check if charset is kosher
+                                        $TestOption = IsValidCharset($OptionValue, $InData['System']);
+                                        if ($TestOption === FALSE)
+                                        {
+                                            $AllGood = $TestOption;
+                                            $InvalidParameters .= 'Charset:'.$OptionValue.', ';
+                                        }
+                                        break;
+                                    case 'OptionsFile':
+                                        //Must be a valid path and exist
+                                        $TestOption = is_readable($OptionValue);
+                                        if ($TestOption === FALSE)
+                                        {
+                                            $AllGood = $TestOption;
+                                            $InvalidParameters .= 'OptionsFile:'.$OptionValue.', ';
+                                        }
+                                        break;
+                                    case 'DefaultGroup':
+                                        //Must be a valid string. Can be a [group] or a server_variable= as in the sample from
+                                        //https://www.php.net/manual/es/mysqli.options.php
+                                        //See https://dev.mysql.com/doc/refman/8.0/en/option-files.html
+                                        $TestOption = is_string($OptionValue);
+                                        if ($TestOption === FALSE)
+                                        {
+                                            $AllGood = $TestOption;
+                                            $InvalidParameters .= 'DefaultGroup:'.$OptionValue.', ';
+                                        }
+                                        break;
+                                    case 'ServerPublicKey':
+                                        //Must be a valid path and exist
+                                        $TestOption = is_readable($Value);
+                                        if ($TestOption === FALSE)
+                                        {
+                                            $AllGood = $TestOption;
+                                            $InvalidParameters .= 'ServerPublicKey:'.$Value.', ';
+                                        }
+                                        break;
+                                    case 'CompressionProtocol':
+                                        //Admits TRUE, defaults on FALSE
+                                        $TestOption = is_bool($OptionValue);
+                                        if ($TestOption === FALSE)
+                                        {
+                                            $AllGood = $TestOption;
+                                            $InvalidParameters .= 'CompressionProtocol:'.var_dump($OptionValue).', ';
+                                        }
+                                        break;
+                                    case 'FoundRows':
+                                        //Admits TRUE, defaults on FALSE
+                                        $TestOption = is_bool($OptionValue);
+                                        if ($TestOption === FALSE)
+                                        {
+                                            $AllGood = $TestOption;
+                                            $InvalidParameters .= 'VerifySSL:'.var_dump($OptionValue).', ';
+                                        }
+                                        break;
+                                    case 'IgnoreSpaces':
+                                        //Admits TRUE, defaults on FALSE
+                                        $TestOption = is_bool($OptionValue);
+                                        if ($TestOption === FALSE)
+                                        {
+                                            $AllGood = $TestOption;
+                                            $InvalidParameters .= 'IgnoreSpaces:'.var_dump($OptionValue).', ';
+                                        }
+                                        break;
+                                    case 'InteractiveClient':
+                                        //Admits TRUE, defaults on FALSE
+                                        $TestOption = is_bool($OptionValue);
+                                        if ($TestOption === FALSE)
+                                        {
+                                            $AllGood = $TestOption;
+                                            $InvalidParameters .= 'InteractiveClient:'.var_dump($OptionValue).', ';
+                                        }
+                                        break;
+                                    case 'UseSSL':
+                                        //Admits TRUE, defaults on FALSE
+                                        $TestOption = is_bool($OptionValue);
+                                        if ($TestOption === FALSE)
+                                        {
+                                            $AllGood = $TestOption;
+                                            $InvalidParameters .= 'UseSSL:'.var_dump($OptionValue).', ';
+                                        }
+                                        break;
+                                    case 'DoNotVerifyServerCert':
+                                        //Admits TRUE, defaults on FALSE
+                                        $TestOption = is_bool($OptionValue);
+                                        if ($TestOption === FALSE)
+                                        {
+                                            $AllGood = $TestOption;
+                                            $InvalidParameters .= 'DoNotVerifyServerCert:'.var_dump($OptionValue).', ';
+                                        }
+                                        break;
+                                    case 'Port':
+                                        //string value
+                                        $TestOption = IsAdequateDatabasePort($InData['System'], $OptionValue);
+                                        if ($TestOption['code'] === 'WRONG')
+                                        {
+                                            $AllGood = FALSE;
+                                            $InvalidParameters .= 'Wrong port: '.$OptionValue.', ';
+                                        }
+                                        break;
+                                    case 'Socket':
+                                        //Not good if not localhost or not accessible
+                                        if ($InData['Options']['Persistent'] === TRUE)
+                                        {
+                                            $ProperServer = 'p:localhost';
+                                        }
+                                        else
+                                        {
+                                            $ProperServer = 'localhost';
+                                        }
+                                        if ($InData['ServerName'] !== $ProperServer)
+                                        {
+                                            $AllGood = FALSE;
+                                            $InvalidParameters .= 'Socket: '.$OptionValue.' used without specifying "localhost" as server name ('.$InData['ServerName'].')';
+                                        }
+                                        elseif (is_writable($OptionValue) === FALSE)
+                                        {
+                                            $AllGood = FALSE;
+                                            $InvalidParameters .= 'Socket: '.$OptionValue.' does not exist or is not writeable.';
+                                        }
+                                        elseif ($InData['Options']['UseSSL'] === TRUE)
+                                        {
+                                            //If there is set an SSL connection, it will fail over a Socket
+                                            $AllGood = FALSE;
+                                            $InvalidParameters .= 'SSL not available over a Socket connection. Disable UseSSL.';
+                                        }
+                                        break;
+                                    default:
+                                        $OutData['Success'] = FALSE;
+                                        $OutData['ReturnValue'] = 'Unknown mysql connection option: '.$OptionKey;
+
+                                        return FALSE;
+                                }
+                            }
+                            break;
+                        default:
+                            $OutData['Success'] = FALSE;
+                            $OutData['ReturnValue'] = 'Unknown mysql connection parameter: '.$Key;
+
+                            return FALSE;
+
+                    }
+                }
+            }
+            if ($AllGood === FALSE)
+            {
+                $OutData['Success'] = TRUE;
+                $OutData['ReturnValue'] = 'Invalid parameters->'.$InvalidParameters;
+
+                return FALSE;
+            }
+
+            $OutData['Success'] = TRUE;
+            $OutData['ReturnValue'] = TRUE;
+
+
+            return TRUE;
+        case "SQLITE":
+            $OutData['Success'] = TRUE;
+            $OutData['ReturnValue'] = 'Unimplemented system. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it';
+
+            return FALSE;
+        case "SQLSRV":
+            $OutData['Success'] = TRUE;
+            $OutData['ReturnValue'] = 'Unimplemented system. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it';
+
+            return FALSE;
+        case "CUBRID":
+        case "DBASE":
+        case "FIREBIRD":
+        case "INTERBASE":
+        case "DB2":
+        case "ORACLE":
+        case "DB":
+        case "DEVLOGGING":
+            $OutData['Success'] = TRUE;
+            $OutData['ReturnValue'] = 'Unimplemented system. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it';
+
+            return FALSE;
+        default:
+            $OutData['Success'] = TRUE;
+            $OutData['ReturnValue'] = 'Odd system: '.$InData['System'];
+
+            return FALSE;
+    }
+}
+
+ /**
+  * OldDBSystemSanityCheck checks that all needed configuration is in place
+  * @param array $OutData
+  * @param mixed $InData
+  *
+  * @return boolean TRUE for OK, FALSE for problems
+  * @return array   $OutData by reference
+  *                 'Success'       boolean TRUE for success, FALSE for fail
+  *                 'ReturnValue'   mixed   Any return value that needs to be sent home.
+  * @since 0.0.3
+  * @see
+  * @todo support persistent connections = connection pooling on MySQL (by adding 'p:' to the hostname)
+  * Evaluar si el socket es necesario... solo vale para localhost...
+  * @deprecated  will be substituted by an atomic variant
+  */
+function OldDBSystemSanityCheck($InData, &$OutData)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> DBSystemSanityCheck '.PHP_EOL;
+        print_r($InData);
+    }
+
 
     switch ($InData['System'])
     {
@@ -346,14 +815,6 @@ function DBSystemSanityCheck($InData, &$OutData)
                             {
                                 $AllGood = $TestOption;
                                 $InvalidParameters .= 'DBPassword:'.$Value.', ';
-                            }
-                            break;
-                        case 'KeepOpen':
-                            $TestOption = is_bool($Value);
-                            if ($TestOption === FALSE)
-                            {
-                                $AllGood = $TestOption;
-                                $InvalidParameters .= 'KeepOpen:'.var_dump($Value).', ';
                             }
                             break;
                         case 'Options':
@@ -596,24 +1057,17 @@ function DBSystemSanityCheck($InData, &$OutData)
                 return FALSE;
             }
             //Close connection
-            if ($InData['KeepOpen'] === FALSE)
+            if (mysqli_close($ConnectionLink) === FALSE)
             {
-                if (mysqli_close($ConnectionLink) === FALSE)
-                {
-                    $OutData['Success'] = TRUE;
-                    $OutData['ReturnValue'] = 'Error closing connection with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+                $OutData['Success'] = TRUE;
+                $OutData['ReturnValue'] = 'Error closing connection with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
 
-                    return FALSE;
-                }
+                return FALSE;
             }
 
             $OutData['Success'] = TRUE;
             $OutData['ReturnValue'] = TRUE;
 
-            if ($InData['KeepOpen'] === TRUE)
-            {
-                $OutData['ConnectionLink'] = $ConnectionLink;
-            }
 
             return TRUE;
         case "SQLITE":
@@ -649,7 +1103,7 @@ function DBSystemSanityCheck($InData, &$OutData)
 
 /**
  * RegisterDBSystem registers a DB Connection.
- * It indexes the connection under the database name
+ * It indexes the connection under a database@host key
  * @param mixed $InData
  *      'System'         The chosen DB System: CUBRID, DBASE, FIREBIRD, DB2(Including CLOUDSCAPE and DERBY), MYSQL, ORACLE, POSTGRE, SQLITE or SQLSRV
  *      'ServerName'     The chosen server. 'localhost' or nothing for SQLite
@@ -746,7 +1200,7 @@ function DBSystemSanityCheck($InData, &$OutData)
  *                                  ODBC Driver 13 for SQL Server
  *                                  ODBC Driver 17 for SQL Server
  *                              'Encrypt'                    Specifies whether the communication with SQL Server is encrypted (1 or true) or
- * unencrypted (0 or false). Default value false (0)
+ *                                                              unencrypted (0 or false). Default value false (0)
  *                              'Failover_Partner'           Windows only. Specifies the server and instance of the database's mirror (if enabled and
  *                                                              configured) to use when the primary server is unavailable.
  *                              'KeyStoreAuthentication'     Authentication method for accessing Azure Key Vault. Controls what kind of credentials
@@ -848,11 +1302,61 @@ function DBSystemSanityCheck($InData, &$OutData)
  *                                  SQLITE3_OPEN_CREATE         Create database if it does not exist
  * @param mixed $OutData
  * @return int     The connection index
- * @since 0.0.3
+ * @since 0.0.6
  * @see
  * @todo new parameter might arise from yet unimplemented systems
  */
 function RegisterDBSystem($InData, $OutData)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> RegisterDBSystem '.PHP_EOL;
+    }
+
+    //Register as GLOBAL
+    $ConnectionName = $InData['Database'].'@'.$InData['ServerName'].uniqid();
+    $GLOBALS['DB'][$ConnectionName]['System'] = $InData['System'];
+    $GLOBALS['DB'][$ConnectionName]['ServerName'] = $InData['ServerName'];
+    $GLOBALS['DB'][$ConnectionName]['Database'] = $InData['Database'];
+    $GLOBALS['DB'][$ConnectionName]['DBUser'] = $InData['DBUser'];
+    $GLOBALS['DB'][$ConnectionName]['DBPassword'] = $InData['DBPassword'];
+    if (isset($InData['Options']))
+    {
+        $GLOBALS['DB'][$ConnectionName]['Options'] = $InData['Options'];
+    }
+
+    //IF APCU is available we cache register on it
+    if (MIL_ACPU === TRUE)
+    {
+        $Resultado = apcu_store('DB', $GLOBALS['DB']);
+        if ($Resultado === FALSE)
+        {
+            $Message = 'Error registering connection over APCU';
+            AddError($Message);
+            $OutData['Success'] = FALSE;
+            $OutData['ReturnValue'] = FALSE;
+
+            return FALSE;
+        }
+    }
+    $OutData['Success'] = TRUE;
+    $OutData['ReturnValue'] = $ConnectionName;
+
+    return $ConnectionName;
+}
+
+/**
+ * OldRegisterDBSystem registers a DB Connection.
+ * It indexes the connection under the database name
+ * @param mixed $InData
+ * @param mixed $OutData
+ * @return int     The connection index
+ * @since 0.0.3
+ * @see
+ * @todo new parameter might arise from yet unimplemented systems
+ * @deprecated  will be substituted by an atomic variant
+ */
+function OldRegisterDBSystem($InData, $OutData)
 {
     if (DEBUGMODE)
     {
@@ -876,10 +1380,12 @@ function RegisterDBSystem($InData, $OutData)
                 $GLOBALS['DB'][$ConnectionName]['Database'] = $InData['Database'];
                 $GLOBALS['DB'][$ConnectionName]['DBUser'] = $InData['DBUser'];
                 $GLOBALS['DB'][$ConnectionName]['DBPassword'] = $InData['DBPassword'];
-                $GLOBALS['DB'][$ConnectionName]['KeepOpen'] = $InData['KeepOpen'];
                 if (isset($InData['ConnectionLink']))
                 {
                     $GLOBALS['DB'][$ConnectionName]['ConnectionLink'] = $InData['ConnectionLink'];
+                    //Test serialization/APCU issue
+                    $GLOBALS['ConnLink'][0] = $InData['ConnectionLink'];
+                    apcu_store('ConnLink', $InData['ConnectionLink']);
                 }
                 if (isset($InData['Options']))
                 {
@@ -919,10 +1425,12 @@ function RegisterDBSystem($InData, $OutData)
         $GLOBALS['DB'][$ConnectionName]['Database'] = $InData['Database'];
         $GLOBALS['DB'][$ConnectionName]['DBUser'] = $InData['DBUser'];
         $GLOBALS['DB'][$ConnectionName]['DBPassword'] = $InData['DBPassword'];
-        $GLOBALS['DB'][$ConnectionName]['KeepOpen'] = $InData['KeepOpen'];
         if (isset($InData['ConnectionLink']))
         {
             $GLOBALS['DB'][$ConnectionName]['ConnectionLink'] = $InData['ConnectionLink'];
+            //Test serialization/APCU issue
+            $GLOBALS['ConnLink'][0] = $InData['ConnectionLink'];
+            apcu_store('ConnLink', $InData['ConnectionLink']);
         }
         if (isset($InData['Options']))
         {
@@ -953,9 +1461,15 @@ function RegisterDBSystem($InData, $OutData)
  * @since 0.0.4
  * @see
  * @todo
+ * @deprecated  will be substituted by an atomic variant
  */
 function TestExistingPool($InData, $OutData)
 {
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> TestExistingPool '.PHP_EOL;
+    }
+
     //Fetch potential previous pools to other databases
     $ThePool = apcu_fetch('DB');
     if ($ThePool === FALSE)
@@ -999,6 +1513,11 @@ function TestExistingPool($InData, $OutData)
  */
 function MySQLInit(&$OutData)
 {
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> MySQLInit '.PHP_EOL;
+    }
+
     $ConnectionLink = mysqli_init();
     if (!$ConnectionLink)
     {
@@ -1023,6 +1542,11 @@ function MySQLInit(&$OutData)
  */
 function MySQLOptions($InData, &$OutData, $ConnectionLink)
 {
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> MySQLOptions '.PHP_EOL;
+    }
+
     if (isset($InData['Options']['ConnectionTimeout']))
     {
         $OptionResult = mysqli_options($ConnectionLink, MYSQLI_OPT_CONNECT_TIMEOUT, $InData['Options']['ConnectionTimeout']);
@@ -1143,6 +1667,11 @@ function MySQLOptions($InData, &$OutData, $ConnectionLink)
  */
 function MySQLRealConnect($InData, &$OutData, $ConnectionLink)
 {
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> MySQLRealConnect '.PHP_EOL;
+    }
+
     //Parse connection flags
     $ConnectionFlags = NULL;
     if (isset($InData['Options']['CompressionProtocol'])&&($InData['Options']['CompressionProtocol'] === TRUE))
@@ -1246,8 +1775,342 @@ function MySQLRealConnect($InData, &$OutData, $ConnectionLink)
 }
 
 /**
+ * FindFunctionBoundary
+ * Returns the right boundary of a function with an arbitrary number of function calls aka (...) as parameters
+ * @param string    $Text the query text
+ * @param int       $Offset the starting offset
+ * @return int      offset of the right parentheses
+ */
+function FindFunctionBoundary($Text, $Offset)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> FindFunctionBoundary '.PHP_EOL;
+    }
+
+    $i = $Offset-1;
+    $Limit = strlen($Text);
+    $Encontrado = FALSE;
+    while (($i<$Limit)&&($Encontrado === FALSE))
+    {
+        $i++; //we advance over the first '('
+        if ($Text[$i] === '(')
+        {
+            $i = $i+FindFunctionBoundary($Text, $i);
+        }
+        if ($Text[$i] === ')')
+        {
+            $Encontrado = TRUE;
+
+            return $i;
+        }
+    }
+}
+
+/**
+ * SmellyStatement
+ * Checks if statement tries to hide things
+ * @param type $Query
+ * @return boolean TRUE if stinks, FALSE if it appears legit
+ * @see https://cheatsheetseries.owasp.org/cheatsheets/XSS_Filter_Evasion_Cheat_Sheet.html
+ *      https://owasp.org/www-community/attacks/SQL_Injection_Bypassing_WAF
+ */
+function SmellyStatement($Query)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> SmellyStatement '.PHP_EOL;
+    }
+
+    $UpperQuery = strtoupper($Query);
+    //Blind SQL Injection
+    // Example: select * from table where id = 1 AND if((ascii(lower(substring((select user()),$i,1))))!=$s,1,benchmark(200000,md5(now())))
+    //Disallow USER()
+    $NumUsr = substr_count($UpperQuery, 'USER()');
+    if ($NumUsr>0)
+    {
+        return TRUE;
+    }
+
+    /*
+     * SLEEP(5)--
+     * SELECT BENCHMARK(1000000,MD5('A'));
+     * id=1 OR SLEEP(25)=0 LIMIT 1--
+     * id=1) OR SLEEP(25)=0 LIMIT 1--
+     * id=1' OR SLEEP(25)=0 LIMIT 1--
+     * id=1') OR SLEEP(25)=0 LIMIT 1--
+     * id=1)) OR SLEEP(25)=0 LIMIT 1--
+     * id=SELECT SLEEP(25)--
+     * Disallow SLEEP();
+     */
+    $NumSlp = substr_count($UpperQuery, 'SLEEP(');
+    if ($NumSlp>0)
+    {
+        return TRUE;
+    }
+
+    //Table guessing
+    //SELECT * from sakila.actor where actor_id = 1 union select 1,2,3,4
+    //Disallow SELECT 1,2
+    $NumSel = substr_count($UpperQuery, 'SELECT 1,2');
+    if ($NumSel>0)
+    {
+        return TRUE;
+    }
+
+    //select user from mysql.user where user = ‘user’ OR mid(password,1,1)=’*’
+    //select user from mysql.user where user = ‘user’ OR mid(password,1,1)=0x2a
+    //select user from mysql.user where user = ‘user’ OR mid(password,1,1)=unhex(‘2a’)
+    //select user from mysql.user where user = ‘user’ OR mid(password,1,1) regexp ‘[*]’
+    //select user from mysql.user where user = ‘user’ OR mid(password,1,1) like ‘*’
+    //select user from mysql.user where user = ‘user’ OR mid(password,1,1) rlike ‘[*]’
+    //select user from mysql.user where user = ‘user’ OR ord(mid(password,1,1))=42
+    //select user from mysql.user where user = ‘user’ OR ascii(mid(password,1,1))=42
+    //select user from mysql.user where user = ‘user’ OR find_in_set(‘2a’,hex(mid(password,1,1)))=1
+    //select user from mysql.user where user = ‘user’ OR position(0x2a in password)=1
+    //select user from mysql.user where user = ‘user’ OR locate(0x2a,password)=1
+    //Disallow info from mysql database
+    $NumMy = substr_count($UpperQuery, 'MYSQL.');
+    if ($NumMy>0)
+    {
+        return TRUE;
+    }
+
+    //URL_encoded text outside concat
+    //Are there spaces encoded (as +)
+    $PosUESp = strpos($UpperQuery,'+');
+    if ($PosUESp !== FALSE)
+    {
+        //Is there a CONCAT(
+        $PosCon = strpos($UpperQuery,'CONCAT');
+        if ($PosCon !== FALSE)
+        {
+            $LeftBoundary = strpos($UpperQuery, '(', $PosCon);
+            $RightBoundary = FindFunctionBoundary($UpperQuery, $LeftBoundary);
+            if (($PosUESp<$LeftBoundary)||($PosUESp>$RightBoundary))
+            {
+                return TRUE;
+            }
+        }
+        else
+        {
+            //No concat... is outside by definition
+            return TRUE;
+        }
+    }
+
+    //Are there spaces encoded (as %20)
+    $PosUESpRaw = strpos($UpperQuery,'%20');
+    if ($PosUESpRaw !== FALSE)
+    {
+        //Is there a CONCAT(
+        $PosCon = strpos($UpperQuery,'CONCAT');
+        if ($PosCon !== FALSE)
+        {
+            $LeftBoundary = strpos($UpperQuery, '(', $PosCon);
+            $RightBoundary = FindFunctionBoundary($UpperQuery, $LeftBoundary);
+            if (($PosUESp<$LeftBoundary)||($PosUESp>$RightBoundary))
+            {
+                return TRUE;
+            }
+        }
+        else
+        {
+            //No concat... is outside by definition
+            return TRUE;
+        }
+    }
+
+    return FALSE;
+}
+
+/**
+ * StatementType
+ * returns the statement type
+ * @param   string $Query   The query
+ * @return  string The statement
+ */
+function StatementType($Query)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> StatementType '.PHP_EOL;
+    }
+
+    $Cachos = explode(' ', $Query);
+
+    return strtoupper($Cachos[0]);
+}
+
+/**
+ * StripValuesFromQuery takes out values than can contain SQL Operators
+ * @param   string $Query   The query
+ * @return  string The stripped query
+ */
+function StripValuesFromQuery($Query)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> StripValuesFromQuery '.PHP_EOL;
+    }
+
+    $Processed = FALSE;
+    $StrippedQuery = '';
+    $Index = 0;
+    $Position = 0;
+    $BegginingEnclosures = array();
+    $EndingEnclosures = array();
+    while (!$Processed)
+    {
+        $EnclosurePos = strpos($Query,"'",$Position);
+        if ($EnclosurePos === FALSE)
+        {
+            // No enclosure || No more enclosures
+            //echo 'No enclosure || No more enclosures'.PHP_EOL;
+            $Processed = TRUE;
+        }
+        else
+        {
+            //Found one! IS it a beginning or an end?
+            //echo 'Found enclosure at position '.$EnclosurePos.PHP_EOL;
+            //We position just AFTER the enclosure
+            $Position = $EnclosurePos+1;
+            //We update the index
+            $Index++;
+            if (IsEven($Index)&&(DEBUGMODE === TRUE))
+            {
+                echo $Index.' is even. Adding to ending enclosure'.PHP_EOL;
+                $EndingEnclosures[] = $EnclosurePos;
+            }
+            elseif (IsOdd($Index)&&(DEBUGMODE === TRUE))
+            {
+                echo $Index.' is odd. Adding to beginning enclosure'.PHP_EOL;
+                $BegginingEnclosures[] = $EnclosurePos;
+            }
+        }
+    }
+
+    //If we have processed something, we return it
+    if ($Position>0)
+    {
+        //We must have an equal number of even and odd enclosures
+        if (DEBUGMODE)
+        {
+            echo 'Beginning Enclosures:'.PHP_EOL;
+            print_r($BegginingEnclosures);
+            echo 'Ending Enclosures:'.PHP_EOL;
+            print_r($EndingEnclosures);
+        }
+        //Add text outsdide the enclosures
+        $AddingOffset = 0;
+        foreach ($BegginingEnclosures as $Key => $Value)
+        {
+            //Get everything outside the enclosures
+            $CharsToKeep = $Value-$AddingOffset; //-1;
+            if (DEBUGMODE)
+            {
+                var_dump($Value);
+                var_dump($AddingOffset);
+                echo 'Take '.$CharsToKeep.' chars from position '.$AddingOffset.PHP_EOL;
+            }
+            $StrippedQuery .= substr($Query, $AddingOffset, $CharsToKeep);
+            //Advance offset to the ending enclosure
+            $AddingOffset = $EndingEnclosures[$Key]+1;
+        }
+        //Now from the last enclosure to the end
+        $StrippedQuery .= substr($Query, $AddingOffset);
+        if (DEBUGMODE)
+        {
+            echo '|'.$StrippedQuery.'|'.PHP_EOL;
+        }
+
+        return $StrippedQuery;
+    }
+    else
+    {
+        //No enclosures, can be a SELECT
+        return $Query;
+    }
+}
+
+/**
+ * JustOneStatement
+ * checks number of statements on the query
+ * @param   string  $Query          The query to analyze
+ * @return  boolean TRUE if its is just one statement, FALSE otherwise
+ */
+function JustOneStatement($Query)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> JustOneStatement '.PHP_EOL;
+    }
+
+    //We make sure no UPDATE, DELETE, INSERT or ALTER appears when SELECTing... and the same for the others. No double statement, also
+    $NumSelect = substr_count($Query, 'SELECT ');
+    $NumUpdates = substr_count($Query, 'UPDATE ');
+    $NumDeletes = substr_count($Query, 'DELETE ');
+    $NumInserts = substr_count($Query, 'INSERT ');
+    $NumAlters = substr_count($Query, 'ALTER ');
+    $AllStatements = $NumSelect+$NumUpdates+$NumDeletes+$NumInserts+$NumAlters;
+    if ($AllStatements>1)
+    {
+        return FALSE;
+    }
+
+    //We take out the values so as to count relevant tokens
+    $StrippedQuery = StripValuesFromQuery($Query);
+
+    //We count the number of ';'
+    $NumPC = substr_count($StrippedQuery, ';');
+
+    //0 or 1 is OK
+    if ($NumPC>1)
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+/**
+ * IsLegitRead
+ * Parses SELECT sentence to make sure it is safe and sound
+ * @param   string  $Query  The query
+ * @return  boolean TRUE if sentence is legit or false otherwise
+ * @since   0.0.5
+ * @see     https://dev.mysql.com/doc/refman/8.0/en/select.html
+ * @todo
+ */
+function IsLegitRead($Query)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsLegitRead '.PHP_EOL;
+    }
+
+    if (SmellyStatement($Query) === TRUE)
+    {
+        return FALSE;
+    }
+
+    $FirstStatement = StatementType($Query);
+    if ($FirstStatement !== 'SELECT')
+    {
+        return FALSE;
+    }
+
+    if (JustOneStatement($Query, $FirstStatement) === FALSE)
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+/**
  * Read 
- * gets info from the database in form of associative array or JSON
+ * Gets info from the database in form of associative array, combination of assocand numeric array, object or JSON
  * @param   array   $ConnectionIndex    The connection heap
  * @param   string  $Query              The query
  * @param   string  $Output             The output type ("OBJECT", "ARRAY", "ASSOC", "NUMASOC" OR "JSON")
@@ -1258,9 +2121,14 @@ function MySQLRealConnect($InData, &$OutData, $ConnectionLink)
  */
 function Read($ConnectionIndex, $Query, $Output)
 {
-    $ConnectionToUse = TestResurrectConnection($ConnectionIndex);
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> Read '.PHP_EOL;
+    }
+
+    $SoundConnection = TestConnection($ConnectionIndex);
     //If there are connection problems, return FALSE
-    if ($ConnectionToUse === FALSE)
+    if ($SoundConnection === FALSE)
     {
         $ErrorMessage = 'Unable to make use of connection registered by index: '.$ConnectionIndex;
         ErrorLog($ErrorMessage, E_USER_ERROR);
@@ -1268,21 +2136,63 @@ function Read($ConnectionIndex, $Query, $Output)
         return FALSE;
     }
 
-    //Now read
-    $ResultSet = array();
-    //fucks sentence $EscapedQuery = mysqli_real_escape_string($ConnectionToUse, $Query);
-    if (mysqli_real_query($ConnectionToUse, $Query) === FALSE)
+    $InData = $GLOBALS['DB'][$ConnectionIndex];
+
+    //ValidateQuery
+    if (IsLegitRead($Query) === FALSE)
     {
-        $ErrorMessage = 'Query error with code '.mysqli_errno($ConnectionToUse).': '.mysqli_error($ConnectionToUse);
+        $ErrorMessage = 'Invalid SELECT query: '.$Query;
         ErrorLog($ErrorMessage, E_USER_ERROR);
 
         return FALSE;
     }
+
+    //Init connection
+    $OutData = array();
+    $ConnectionLink = MySQLInit($OutData);
+    if (!$ConnectionLink)
+    {
+        $ErrorMessage = 'MySQLInit failure';
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    //Establish options registered
+    if (MySQLOptions($InData, $OutData, $ConnectionLink) === FALSE)
+    {
+        $OutData['Success'] = TRUE;
+        $OutData['ReturnValue'] = 'MySQLOptions test failed';
+
+        return FALSE;
+    }
+
+    //Connect
+    if (MySQLRealConnect($InData, $OutData, $ConnectionLink) === FALSE)
+    {
+        $OutData['Success'] = TRUE;
+        $OutData['ReturnValue'] = 'MySQLRealConnect test failed with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+
+        return FALSE;
+    }
+
+    //Now read
+    $ResultSet = array();
+    //fucks sentence $EscapedQuery = mysqli_real_escape_string($ConnectionToUse, $Query);
+    if (mysqli_real_query($ConnectionLink, $Query) === FALSE)
+    {
+        $ErrorMessage = 'Query error with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
     //Get Data
-    $TheData = mysqli_store_result($ConnectionToUse);
+    $TheData = mysqli_store_result($ConnectionLink);
     //var_dump($TheData);
-    $ResultSet['Columns'] = mysqli_field_count($ConnectionToUse);
+    $ResultSet['Columns'] = mysqli_field_count($ConnectionLink);
     $ResultSet['Rows'] = mysqli_num_rows($TheData);
+
     //Return NULL if there are no rows
     if ($ResultSet['Rows'] === 0)
     {
@@ -1502,7 +2412,52 @@ function Read($ConnectionIndex, $Query, $Output)
             return FALSE;
     }
 
+    //Close connection
+    if (mysqli_close($ConnectionLink) === FALSE)
+    {
+        $ErrorMessage = 'Error closing connection with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    //Return Data
     return $ResultSet;
+}
+
+/**
+ * IsLegitUpdate
+ * Parses UPDATE sentence to make sure it is safe and sound
+ * @param   string  $Query  The query
+ * @return  boolean TRUE if sentence is legit or false otherwise
+ * @since   0.0.6
+ * @see     https://dev.mysql.com/doc/refman/8.0/en/select.html
+ * @todo
+ */
+function IsLegitUpdate($Query)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsLegitUpdate '.PHP_EOL;
+    }
+
+    if (SmellyStatement($Query) === TRUE)
+    {
+        return FALSE;
+    }
+
+    $FirstStatement = StatementType($Query);
+    if ($FirstStatement !== 'UPDATE')
+    {
+        return FALSE;
+    }
+
+    if (JustOneStatement($Query, $FirstStatement) === FALSE)
+    {
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 /**
@@ -1513,13 +2468,18 @@ function Read($ConnectionIndex, $Query, $Output)
  * @return  mixed   Affected rows or NULL if affected rows are 0; FALSE if UPDATE fails
  * @since   0.0.3
  * @see     
- * @todo
+ * @todo Update Validation
  */
 function Update($ConnectionIndex, $Query)
 {
-    $ConnectionToUse = TestResurrectConnection($ConnectionIndex);
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> Update '.PHP_EOL;
+    }
+
+    $SoundConnection = TestConnection($ConnectionIndex);
     //If there are connection problems, return FALSE
-    if ($ConnectionToUse === FALSE)
+    if ($SoundConnection === FALSE)
     {
         $ErrorMessage = 'Unable to make use of connection registered by index: '.$ConnectionIndex;
         ErrorLog($ErrorMessage, E_USER_ERROR);
@@ -1527,24 +2487,108 @@ function Update($ConnectionIndex, $Query)
         return FALSE;
     }
 
-    //Now update
-    //fucks sentence $EscapedQuery = mysqli_real_escape_string($ConnectionToUse, $Query);
-    if (mysqli_real_query($ConnectionToUse, $Query) === FALSE)
+    $InData = $GLOBALS['DB'][$ConnectionIndex];
+
+    //ValidateQuery
+    if (IsLegitUpdate($Query) === FALSE)
     {
-        $ErrorMessage = 'Update error with code '.mysqli_errno($ConnectionToUse).': '.mysqli_error($ConnectionToUse);
+        $ErrorMessage = 'Invalid UPDATE query: '.$Query;
         ErrorLog($ErrorMessage, E_USER_ERROR);
 
         return FALSE;
     }
 
-    $ResultSet['AffectedRows'] = mysqli_affected_rows($ConnectionToUse);
+    //Init connection
+    $OutData = array();
+    $ConnectionLink = MySQLInit($OutData);
+    if (!$ConnectionLink)
+    {
+        $ErrorMessage = 'MySQLInit failure';
+        ErrorLog($ErrorMessage, E_USER_ERROR);
 
+        return FALSE;
+    }
+
+    //Establish options registered
+    if (MySQLOptions($InData, $OutData, $ConnectionLink) === FALSE)
+    {
+        $OutData['Success'] = TRUE;
+        $OutData['ReturnValue'] = 'MySQLOptions test failed';
+
+        return FALSE;
+    }
+
+    //Connect
+    if (MySQLRealConnect($InData, $OutData, $ConnectionLink) === FALSE)
+    {
+        $OutData['Success'] = TRUE;
+        $OutData['ReturnValue'] = 'MySQLRealConnect test failed with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+
+        return FALSE;
+    }
+
+    //Now update
+    if (mysqli_real_query($ConnectionLink, $Query) === FALSE)
+    {
+        $ErrorMessage = 'Update error with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    $ResultSet['AffectedRows'] = mysqli_affected_rows($ConnectionLink);
+
+    //Close connection
+    if (mysqli_close($ConnectionLink) === FALSE)
+    {
+        $ErrorMessage = 'Error closing connection with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    //Return values
     if ($ResultSet['AffectedRows'] === 0)
     {
         return NULL;
     }
 
     return $ResultSet;
+}
+
+/**
+ * IsLegitInsert
+ * Parses INSERT sentence to make sure it is safe and sound
+ * @param   string  $Query  The query
+ * @return  boolean TRUE if sentence is legit or false otherwise
+ * @since   0.0.6
+ * @see     https://dev.mysql.com/doc/refman/8.0/en/select.html
+ * @todo
+ */
+function IsLegitInsert($Query)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsLegitInsert '.PHP_EOL;
+    }
+
+    if (SmellyStatement($Query) === TRUE)
+    {
+        return FALSE;
+    }
+
+    $FirstStatement = StatementType($Query);
+    if ($FirstStatement !== 'INSERT')
+    {
+        return FALSE;
+    }
+
+    if (JustOneStatement($Query, $FirstStatement) === FALSE)
+    {
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 /**
@@ -1559,9 +2603,14 @@ function Update($ConnectionIndex, $Query)
  */
 function Insert($ConnectionIndex, $Query)
 {
-    $ConnectionToUse = TestResurrectConnection($ConnectionIndex);
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> Insert '.PHP_EOL;
+    }
+
+    $SoundConnection = TestConnection($ConnectionIndex);
     //If there are connection problems, return FALSE
-    if ($ConnectionToUse === FALSE)
+    if ($SoundConnection === FALSE)
     {
         $ErrorMessage = 'Unable to make use of connection registered by index: '.$ConnectionIndex;
         ErrorLog($ErrorMessage, E_USER_ERROR);
@@ -1569,24 +2618,108 @@ function Insert($ConnectionIndex, $Query)
         return FALSE;
     }
 
-    //Now insert
-    //Fucks sentence $EscapedQuery = mysqli_real_escape_string($ConnectionToUse, $Query);
-    if (mysqli_real_query($ConnectionToUse, $Query) === FALSE)
+    $InData = $GLOBALS['DB'][$ConnectionIndex];
+
+    //ValidateQuery
+    if (IsLegitInsert($Query) === FALSE)
     {
-        $ErrorMessage = 'Insert error with code '.mysqli_errno($ConnectionToUse).': '.mysqli_error($ConnectionToUse);
+        $ErrorMessage = 'Invalid INSERT query: '.$Query;
         ErrorLog($ErrorMessage, E_USER_ERROR);
 
         return FALSE;
     }
 
-    $ResultSet['AffectedRows'] = mysqli_affected_rows($ConnectionToUse);
+    //Init connection
+    $OutData = array();
+    $ConnectionLink = MySQLInit($OutData);
+    if (!$ConnectionLink)
+    {
+        $ErrorMessage = 'MySQLInit failure';
+        ErrorLog($ErrorMessage, E_USER_ERROR);
 
+        return FALSE;
+    }
+
+    //Establish options registered
+    if (MySQLOptions($InData, $OutData, $ConnectionLink) === FALSE)
+    {
+        $OutData['Success'] = TRUE;
+        $OutData['ReturnValue'] = 'MySQLOptions test failed';
+
+        return FALSE;
+    }
+
+    //Connect
+    if (MySQLRealConnect($InData, $OutData, $ConnectionLink) === FALSE)
+    {
+        $OutData['Success'] = TRUE;
+        $OutData['ReturnValue'] = 'MySQLRealConnect test failed with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+
+        return FALSE;
+    }
+
+    //Now insert
+    //Fucks sentence $EscapedQuery = mysqli_real_escape_string($ConnectionToUse, $Query);
+    if (mysqli_real_query($ConnectionLink, $Query) === FALSE)
+    {
+        $ErrorMessage = 'Insert error with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    $ResultSet['AffectedRows'] = mysqli_affected_rows($ConnectionLink);
+
+    //Close connection
+    if (mysqli_close($ConnectionLink) === FALSE)
+    {
+        $ErrorMessage = 'Error closing connection with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    //Return values
     if ($ResultSet['AffectedRows'] === 0)
     {
         return NULL;
     }
 
     return $ResultSet;
+}
+/**
+ * IsLegitDelete
+ * Parses DELETE sentence to make sure it is safe and sound
+ * @param   string  $Query  The query
+ * @return  boolean TRUE if sentence is legit or false otherwise
+ * @since   0.0.6
+ * @see     https://dev.mysql.com/doc/refman/8.0/en/select.html
+ * @todo
+ */
+function IsLegitDelete($Query)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsLegitDelete '.PHP_EOL;
+    }
+
+    if (SmellyStatement($Query) === TRUE)
+    {
+        return FALSE;
+    }
+
+    $FirstStatement = StatementType($Query);
+    if ($FirstStatement !== 'DELETE')
+    {
+        return FALSE;
+    }
+
+    if (JustOneStatement($Query, $FirstStatement) === FALSE)
+    {
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 /**
@@ -1601,6 +2734,105 @@ function Insert($ConnectionIndex, $Query)
  */
 function Delete($ConnectionIndex, $Query)
 {
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> Delete '.PHP_EOL;
+    }
+
+    $SoundConnection = TestConnection($ConnectionIndex);
+    //If there are connection problems, return FALSE
+    if ($SoundConnection === FALSE)
+    {
+        $ErrorMessage = 'Unable to make use of connection registered by index: '.$ConnectionIndex;
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    $InData = $GLOBALS['DB'][$ConnectionIndex];
+
+    //ValidateQuery
+    if (IsLegitDelete($Query) === FALSE)
+    {
+        $ErrorMessage = 'Invalid DELETE query: '.$Query;
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    //Init connection
+    $OutData = array();
+    $ConnectionLink = MySQLInit($OutData);
+    if (!$ConnectionLink)
+    {
+        $ErrorMessage = 'MySQLInit failure';
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    //Establish options registered
+    if (MySQLOptions($InData, $OutData, $ConnectionLink) === FALSE)
+    {
+        $OutData['Success'] = TRUE;
+        $OutData['ReturnValue'] = 'MySQLOptions test failed';
+
+        return FALSE;
+    }
+
+    //Connect
+    if (MySQLRealConnect($InData, $OutData, $ConnectionLink) === FALSE)
+    {
+        $OutData['Success'] = TRUE;
+        $OutData['ReturnValue'] = 'MySQLRealConnect test failed with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+
+        return FALSE;
+    }
+
+    //Now delete
+    //Fucks sentence $EscapedQuery = mysqli_real_escape_string($ConnectionToUse, $Query);
+    if (mysqli_real_query($ConnectionLink, $Query) === FALSE)
+    {
+        $ErrorMessage = 'Delete error with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    $ResultSet['AffectedRows'] = mysqli_affected_rows($ConnectionLink);
+
+    //Close connection
+    if (mysqli_close($ConnectionLink) === FALSE)
+    {
+        $ErrorMessage = 'Error closing connection with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    //Return values
+    if ($ResultSet['AffectedRows'] === 0)
+    {
+        return NULL;
+    }
+
+    return $ResultSet;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    //LO viejuno
     $ConnectionToUse = TestResurrectConnection($ConnectionIndex);
     //If there are connection problems, return FALSE
     if ($ConnectionToUse === FALSE)
@@ -1639,9 +2871,15 @@ function Delete($ConnectionIndex, $Query)
  * @since   0.0.3
  * @see     
  * @todo adapt to multi-database
+ * @deprecated
  */
 function Reconnect($ConnectionIndex)
 {
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> Reconnect '.PHP_EOL;
+    }
+
     $OutData = array();
     $InData = array();
     $KeepTheConnection = FALSE;
@@ -1667,7 +2905,8 @@ function Reconnect($ConnectionIndex)
     if (is_int(MIL_POOLEDCONNECTIONS))
     {
         //Pooled connection. Get a random one from the pool
-        $RandomConn = random_int(0,4);
+        $IndexMax = MIL_POOLEDCONNECTIONS-1;
+        $RandomConn = random_int(0,$IndexMax);
         $ConnectionData = $GLOBALS['DB'][$ConnectionIndex][$RandomConn];
     }
     else
@@ -1681,7 +2920,6 @@ function Reconnect($ConnectionIndex)
     $InData['Database'] = $GLOBALS['DB'][$ConnectionIndex]['Database'];
     $InData['DBUser'] = $GLOBALS['DB'][$ConnectionIndex]['DBUser'];
     $InData['DBPassword'] = $GLOBALS['DB'][$ConnectionIndex]['DBPassword'];
-    $InData['KeepOpen'] = $GLOBALS['DB'][$ConnectionIndex]['KeepOpen'];
     if (isset($InData['ConnectionLink']))
     {
         //We are coming from a failed kept-up connection. Flag It
@@ -1717,13 +2955,18 @@ function Reconnect($ConnectionIndex)
 }
 
 /**
- * TestResurrectConnection
- * Checks connection health and reconnects if necessary
+ * TestConnection
+ * Recreates connection array if it does not exist
  * @param   string  $ConnectionIndex
- * @return  mixed   The connection to use or FALSE on error 
+ * @return  boolean
  */
-function TestResurrectConnection($ConnectionIndex)
+function TestConnection($ConnectionIndex)
 {
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> TestConnection '.PHP_EOL;
+    }
+
     //If connection does not exist...
     if (!isset($GLOBALS['DB'][$ConnectionIndex]))
     {
@@ -1754,13 +2997,97 @@ function TestResurrectConnection($ConnectionIndex)
         }
     }
 
-    //If it is kept, just use it
+    //Now check if the connection was cached
+    if (!isset($GLOBALS['DB'][$ConnectionIndex]))
+    {
+        $ErrorMessage = 'No connection registered by index: '.$ConnectionIndex;
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+    else
+    {
+        return TRUE;
+    }
+}
+
+/**
+ * TestResurrectConnection
+ * Checks connection health and reconnects if necessary
+ * @param   string  $ConnectionIndex
+ * @return  mixed   The connection to use or FALSE on error 
+ * @since   0.0.3
+ * @see     
+ * @todo 
+ * @deprecated
+ */
+function TestResurrectConnection($ConnectionIndex)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> TestResurrectConnection '.PHP_EOL;
+    }
+
+    //If connection does not exist...
+    if (!isset($GLOBALS['DB'][$ConnectionIndex]))
+    {
+        //and no fallback cache exist, return error
+        if (MIL_ACPU === FALSE)
+        {
+            $ErrorMessage = 'No connection registered by index: '.$ConnectionIndex;
+            ErrorLog($ErrorMessage, E_USER_ERROR);
+
+            return FALSE;
+        }
+        else
+        {
+            //But if it does, recreate globals from cache
+            $ConnectionCache = apcu_fetch('DB');
+            if ($ConnectionCache === FALSE)
+            {
+                //Error when recreating globals
+                $ErrorMessage = 'No connection info available on ACPU';
+                ErrorLog($ErrorMessage, E_USER_ERROR);
+
+                return FALSE;
+            }
+            else
+            {
+                $GLOBALS['DB'] = $ConnectionCache;
+            }
+        }
+    }
+
+    //Pooled connection
+    if (is_int(MIL_POOLEDCONNECTIONS))
+    {
+        echo 'Globals[db]:';
+        print_r($GLOBALS['DB']);
+        //In any other case, we must reconnect -yes, including persistent connections
+        //Shouldn't give any problems as the connection has been checked before
+        echo '<p>Pooled connection, but no live connection found</p>';
+        $ConnectionToUse = Reconnect($ConnectionIndex);
+    }
+    else
+    {
+        //In any other case, we must reconnect -yes, including persistent connections
+        //Shouldn't give any problems as the connection has been checked before
+        //$ConnectionToUse = Reconnect($ConnectionIndex);
+        //Conexion desde $GLOBALS funciona
+        //$ConnectionToUse = $GLOBALS['ConnLink'][0];
+        //A ver desde APCU
+        $ConnectionToUse = apcu_fetch('ConnLink');
+    }
+
+    /*If it is kept, just use it
     if ($GLOBALS['DB'][$ConnectionIndex]['KeepOpen'] === TRUE)
     {
         //But first, check if it is alive
         if (is_int(MIL_POOLEDCONNECTIONS))
         {
             //Pooled connection
+            echo 'Globals[db]:';
+            print_r($GLOBALS['DB']);
             if (property_exists($GLOBALS['DB'][$ConnectionIndex]['ConnectionLink'], "thread_id"))
             {
                 $ConnectionToUse = $GLOBALS['DB'][$ConnectionIndex]['ConnectionLink'];
@@ -1781,6 +3108,6 @@ function TestResurrectConnection($ConnectionIndex)
         //Shouldn't give any problems as the connection has been checked before
         $ConnectionToUse = Reconnect($ConnectionIndex);
     }
-
+*/
     return $ConnectionToUse;
 }
