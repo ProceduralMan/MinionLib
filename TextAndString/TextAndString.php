@@ -101,3 +101,25 @@ function IsValidUTF8Text($Text)
 
     return FALSE;
 }
+
+/**
+ * CloseCommaDelimitedList takes the last comma from the list and adds a closure char/string
+ * Assumes an string ending in ',' or ' ,'
+ * @param   string  $TheList    the comma-delimited string
+ * @param   string  $Closure    the closure to add
+ * @return  string  the comma-delimited string
+ * @since 0.0.7
+ * @see
+ * @todo
+ */
+function CloseCommaDelimitedList($TheList, $Closure)
+{
+    //1.- take out extra spaces
+    $TheList2 = rtrim($TheList);
+    //2.- Take out the comma
+    $TheList3 = substr($TheList2, 0, strlen($TheList2)-1);
+    //3.- Take any loosen spaces and close the list
+    $TheList4 = rtrim($TheList3).$Closure;
+
+    return $TheList4;
+}

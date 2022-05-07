@@ -36,30 +36,38 @@ define("CC", "INCODE");
  *      Helper flags can be combined to add contextual info to the record
  *  2)  Call LogData($LogLevel, $EventText) @todo HACER LOGDATA... aplicar logdata y re-probar trazado
  */
-//Timezone to convert dates to. Any of PHP's supported ones https://www.php.net/manual/en/timezones.php
-define("LOCALTZ", "Europe/Madrid");
 
-//Location to store Data Plug CSVs
-define("DATA_PLUG_STORAGE", "/home/masmanda");
-
-//Use of ACPU or REDIS caches..
-define("MIL_ACPU", TRUE);
-define("MIL_REDIS", FALSE); //STILL unsuported... uneffectual
-
-//This must always be active, as is the front-end used in other user-facing functions
+//**REQUIRED**
+require_once 'Configuration/Configuration.php';
 require_once 'ErrorHandling/ErrorLogging.php';
+//***ERROR LOGGING-RELATED CONFIGURATION CONSTANTS***
+//Timezone to convert dates to. Any of PHP's supported ones https://www.php.net/manual/en/timezones.php
+Defaults("LOCALTZ", "Europe/Madrid");
+
 //Uncomment to activate
 require_once 'ErrorHandling/ErrorHandling.php';
 //Uncomment to activate
-require_once 'Configuration/Configuration.php';
-//Uncomment to activate
 require_once 'TextAndString/TextAndString.php';
+require_once 'DateAndTime/DateAndTime.php';
 require_once 'Mathematical/Mathematical.php';
-//Uncomment to activate. Requires ErrorHandling and TextAndString
+require_once 'DataStructures/DataStructures.php';
+//Uncomment to activate. Requires TextAndString and DataStructures
 require 'Database/SQLDB.php';
 //Uncomment to activate
 require_once 'DataValidation/DataValidation.php';
 require_once 'DataPlugs/Internet.php';
+//***DATA PLUGS-RELATED CONFIGURATION CONSTANTS***
+//Location to store Data Plug CSVs
+Defaults("DATA_PLUG_STORAGE", "/home/masmanda");
+
+
+//Uncomment to activate. Requires DateAndTime
+require_once 'Cache/Caching.php';
+//***CACHE-RELATED CONFIGURATION CONSTANTS***
+//Use of ACPU or REDIS caches..
+//ACPU uses an auto-setter function when included
+define("MIL_REDIS", FALSE);             //STILL unsuported... uneffectual
+define("MIL_ACPUPERSISTLAPSE", 600);   //10 minutes to persist caches into the database
 
 //Do not forget to set the required values -see ErrorHandling.php for explanation-
 //Channel Option...

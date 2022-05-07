@@ -19,9 +19,17 @@ require_once __DIR__.'/../Configuration/Configuration.php';
  * as well as if the Minion errors are used
  * @param string    $ErrorMessage the error message
  * @param int       $ErrorType The PHP errofunc constants https://www.php.net/manual/en/errorfunc.constants.php
+ * @since 0.0.1
+ * @see
+ * @todo
  */
 function ErrorLog($ErrorMessage, $ErrorType)
 {
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> ErrorLog=> LEVEL:'.$ErrorType.' MESSAGE:'.$ErrorMessage.PHP_EOL;
+    }
+
     if (isset($GLOBALS['Loggers']))
     {
         $StandardLogging = FALSE;
@@ -32,6 +40,17 @@ function ErrorLog($ErrorMessage, $ErrorType)
     }
 
     $ErrorLegend = ErrorConstantToLiteral($ErrorType);
+    if (DEBUGMODE)
+    {
+        if ($StandardLogging)
+        {
+            echo date("Y-m-d H:i:s").' -> ErrorLog=> ***STANDARD LOGGING*** LEVEL:'.$ErrorType.' LITERAL:'.$ErrorLegend.PHP_EOL;
+        }
+        else
+        {
+            echo date("Y-m-d H:i:s").' -> ErrorLog=> ***MINION LOGGING*** LEVEL:'.$ErrorType.' LITERAL:'.$ErrorLegend.PHP_EOL;
+        }
+    }
 
     switch ($ErrorType)
     {

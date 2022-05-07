@@ -7,7 +7,7 @@
  * @copyright 2021-2022
  * @version 1.0 initial version
  * @package Minion Library
- * @todo
+ * @todo test NUMERIC array caching
  */
 
 require_once __DIR__.'/../MinionSetup.php';
@@ -130,6 +130,7 @@ else
 
 //read from simple connection
 $Query1 = "SELECT * FROM actor LIMIT 3";
+//$Query1 = "SELECT * FROM AAATypeTest LIMIT 3";
 $Result1 = Read($Index6, $Query1, "OBJECT");
 if ($Result1 === FALSE)
 {
@@ -244,3 +245,52 @@ else
 {
     echo "DELETING gave ".$Result8['AffectedRows']." rows".PHP_EOL;
 }
+
+/*
+ * To run this test, prior run the following sentences on sakila DB
+ * Other wise it will fail
+ * CREATE TABLE `sakila`.`ActorTestTable` (
+ *   `actor_id` smallint unsigned NOT NULL AUTO_INCREMENT,
+ *   `first_name` varchar(45) NOT NULL,
+ *   `last_name` varchar(45) NOT NULL,
+ *   `last_update` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ *   PRIMARY KEY (`actor_id`),
+ *   KEY `idx_actor_last_name` (`last_name`)
+ * ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+ * 
+ * INSERT INTO `sakila`.`ActorTestTable` (`actor_id`,`first_name`,`last_name`,`last_update`)
+ * SELECT `actor_id`,`first_name`,`last_name`,`last_update` FROM sakila.actor
+ * LIMIT 12;
+ */
+echo PHP_EOL.'High-level cache read, full table. Fisrt time it gets it from DB'.PHP_EOL;
+$TestData = ReadCache('TestData', $Index6, 'ActorTestTable');
+print_r($TestData);
+
+echo PHP_EOL.'High-level cache read, full table. Second time it gets it from APCU'.PHP_EOL;
+$TestData2 = ReadCache('TestData', $Index6, 'ActorTestTable');
+print_r($TestData2);
+
+echo PHP_EOL.'Now, with a persistable cache data'.PHP_EOL;
+$TimeToLive = 0; //Live forever... in a CLI case until the script finishes, I am afraid
+$TestData3 = ReadCache('TestDataP', $Index6, 'ActorTestTable', TRUE, $TimeToLive, 'APCU');
+print_r($TestData3);
+
+echo 'Add a row to the array and force-persist the cache, updating (no FULL-REWRITE)'.PHP_EOL;
+$TestData3['Data'][6]['actor_id'] = 7;
+$TestData3['Data'][6]['first_name'] = 'JOHNNY';
+$TestData3['Data'][6]['last_name'] = 'ME LAVO';
+$TestData3['Data'][6]['last_update'] = '2022-02-15 22:22:22';
+$Result9 = Array2APCU($TestData3, 'TestDataP');
+if (!$Result9)
+{
+    echo '*** ERROR CACHEING***';
+}
+else
+{
+    $Result10 = PersistCache('TestDataP', $Index6, 'ActorTestTable', FALSE);
+    if (!$Result10)
+    {
+        echo '*** ERROR PERSISTING CACHE***';
+    }
+}
+print_r($TestData3);

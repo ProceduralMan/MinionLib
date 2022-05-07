@@ -1,5 +1,45 @@
 # MinionLib Change Log
-## Version 0.0.6
+## Version 0.0.7
+- Improvements on functions documentation
+- Caching Functions
+  - APCUDefaultsSetter sets the default config flags if APCU is running on the system
+  - IsAPCURunning checks if APCU is enabled and returns TRUE if so, FALSE otherwise
+  - APCUStatus returns APCU Status info
+  - APCU2Array returns data from APCU cache
+  - PersistCache reads from cache and stores in table using auxiliary functions
+  - ReadCache tries cache first and if not reads from table and stores in cache
+  - APCULastDBWrite checks the last time a cache object was persisted to DB
+- Configuration Functions
+  - Defaults creates constants. Defines if not defined
+  - IniShorthand2Int translates shorthand notation to int value
+- Data Structures Functions
+  -AssocToMySQLAssoc converts a standard ASSOC array to a MySQl ASSOC Data Structure
+- Data Validation Functions
+  - IsAssocArray checks wether or not an array is associative
+  - IsNumericArray checks wether or not an array is numeric
+  - IsMultiArray checks if the array is single or multidimensional
+  - IsMySQLAssocDataStructure checks if the array has the structure of a MySQL ASSOC Data Structure
+- Date and Time Functions
+  -HRLapse Calculates a lapse and returns it in human-readable format
+  -MRLapse Calculates a lapse and returns it in machine-readable format
+- SQLDB Functions
+  - AssocToTable writes an associative array into a DB Table
+  - GetMySQLTableMetadata gets  metadata from a MySQL table/resultset
+  - InsertFromMySQlAssocDataStructure fills a table with data from an MySQL ASSOC style array
+  - IsLegitMerge parses INSERT ...ON DUPLICATE KEY UPDATE sentence to make sure it is safe and sound
+  - Merge merges info into the database
+  - MergeFromMySQlAssocDataStructure merges the data form a MySQL ASSOC style array into a Table
+  - MySQLTableMetadata gets the metadata on the fields included in the resultset
+  - MySQLProperQuote quotes the field according to the data type
+  - MySQLRSFlags explicits the MySQL flags that have been set
+  - TableToArray Reads a table to an array, same structure as an ARRAY MySQL Query
+  - TableToAssoc Reads a table to an array, same structure as an ASSOC MySQL Query
+  - Truncate empties a table
+- Text and String Functions
+  - CloseCommaDelimitedList takes the last comma from the list and adds a closure char/string
+
+
+## Version 0.0.6 (2022-04-18)
 - Bug Fixes:
   - Caching connection objets cripples them, due to a serialization issue.
     Connection pool eliminated
@@ -16,13 +56,13 @@
   - IsEven validates if the number is even
   - IsOdd validates if the number is odd
 
-## Version 0.0.5
+## Version 0.0.5 (2022-04-08)
 - SQLDB Functions
   - IsLegitRead parses SELECT sentence to make sure it is safe and sound
 - Bug Fixes:
   - Read makes use of a fixed-size pool instead of a define-controlled one
 
-## Version 0.0.4
+## Version 0.0.4 (2022-03-20)
 - SQLDB Functions
   - APCU-aware RegisterMySQLConnection
   - APCU-aware RegisterDBSystem
@@ -33,7 +73,7 @@
   - APCU-aware Insert
   - Delete: deletes info from the database
 
-## Version 0.0.3
+## Version 0.0.3 (2022-01-30)
 - Fix php-cs config
 - Data Validation Functions
   - IsAdequateDatabasePort: checks if port is OK for holding a SQL Database main port
@@ -55,11 +95,11 @@
   - RegisterMySQLConnection: front-end to register a connection to MySQL
   - TestResurrectConnection: checks connection health and reconnects if necessary
 
-## Version 0.0.2
+## Version 0.0.2 (2022-01-27)
 - Roadmap info
 - Composer integration
 
-## Version 0.0.1
+## Version 0.0.1 (2022-01-27)
 - Configuration Functions
   - ErrorConstantToLiteral: turns standard int error constants to error literals
 - Data Plugs Functions

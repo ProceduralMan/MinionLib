@@ -335,5 +335,41 @@ $DBPassword = '82CX39t3gOnf2BHOxPmE';
                     echo "<p>DELETING gave ".$Result8['AffectedRows']." rows</p>".PHP_EOL;
                 }
                 ?>
+                <h2>High-level cache read, full table. Fisrt time it gets it from DB</h2>
+                <?php
+                    $TestData = ReadCache('TestData', $Index6, 'ActorTestTable');
+                    echo "<p>Got ".count($TestData['Data'])." rows!</p>";
+                ?>
+                <h2>High-level cache read, full table. Second time it gets it from APCU</h2>
+                <?php
+                    $TestData2 = ReadCache('TestData', $Index6, 'ActorTestTable');
+                    echo "<p>Got ".count($TestData2['Data'])." rows!</p>";
+                ?>
+                <h2>Now, with a persistable cache data</h2>
+                <?php
+                    $TestData3 = ReadCache('TestDataP', $Index6, 'ActorTestTable', TRUE, $TimeToLive, 'APCU');
+                    echo "<p>Got ".count($TestData3['Data'])." rows!</p>";
+                ?>
+                <h2>Add a row to the array and force-persist the cache, updating (no FULL-REWRITE)</h2>
+                <?php
+                    $TestData3['Data'][6]['actor_id'] = 7;
+                    $TestData3['Data'][6]['first_name'] = 'JOHNNY';
+                    $TestData3['Data'][6]['last_name'] = 'ME LAVO';
+                    $TestData3['Data'][6]['last_update'] = '2022-02-15 22:22:22';
+                    $Result9 = Array2APCU($TestData3, 'TestDataP');
+                    if (!$Result9)
+                    {
+                        echo '*** ERROR CACHEING***';
+                    }
+                    else
+                    {
+                        $Result10 = PersistCache('TestDataP', $Index6, 'ActorTestTable', FALSE);
+                        if (!$Result10)
+                        {
+                            echo '*** ERROR PERSISTING CACHE***';
+                        }
+                    }
+                    echo "<p>Got ".count($TestData3['Data'])." rows!</p>";
+                ?>
 	</body>
 </html>

@@ -2,7 +2,7 @@
 
 /*
  * DataValidation
- * DataValidation the Minion way
+ * Data Validation the Minion way
  *
  * @author ProceduralMan <proceduralman@gmail.com>
  * @copyright 2021
@@ -24,6 +24,11 @@
  */
 function IsValidHost($HostnameOrIP, $PublicNetwork = TRUE)
 {
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsValidHost '.PHP_EOL;
+    }
+
     //Localhost is OK
     if ($HostnameOrIP === 'localhost')
     {
@@ -143,6 +148,11 @@ function IsValidHost($HostnameOrIP, $PublicNetwork = TRUE)
  */
 function IsValidMySQLObjectName($Object)
 {
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsValidMySQLObjectName '.PHP_EOL;
+    }
+
     //echo 'Object '.$Object.'=>';
 
     if (Enclosure($Object) === MIL_QUOTES_BACKTICK)
@@ -230,6 +240,11 @@ function IsValidMySQLObjectName($Object)
  */
 function IsValidMySQLName($DBObject, $IsAlias = FALSE)
 {
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsValidMySQLName '.PHP_EOL;
+    }
+
     //echo 'DBObject = '.$DBObject.'=>';
     //Check valid length
     if ($IsAlias === TRUE)
@@ -283,6 +298,11 @@ function IsValidMySQLName($DBObject, $IsAlias = FALSE)
  */
 function IsValidMySQLUser($Username)
 {
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsValidMySQLUser '.PHP_EOL;
+    }
+
     if ((Enclosure($Username) === MIL_QUOTES_SINGLE)||(Enclosure($Username) === MIL_QUOTES_DOUBLE)||(Enclosure($Username) === MIL_QUOTES_BACKTICK))
     {
         $NudeUser = mb_substr($Username, 1, mb_strlen($Username, "UTF-8")-2, "UTF-8");
@@ -339,6 +359,11 @@ function IsValidMySQLUser($Username)
  */
 function IsValidCharset($Charset, $System)
 {
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsValidCharset '.PHP_EOL;
+    }
+
     $ValidMySQLCharsets = array(
         'armscii8', //ARMSCII-8 Armenian
         'ascii',    //US ASCII
@@ -490,6 +515,11 @@ function IsValidCharset($Charset, $System)
  */
 function IsValidIANAPort($PortNumber)
 {
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsValidIANAPort '.PHP_EOL;
+    }
+
     if ($PortNumber<0)
     {
         return FALSE;
@@ -522,6 +552,11 @@ function IsValidIANAPort($PortNumber)
  */
 function IsAdequateDatabasePort($System, $PortNumber, $Proto = 'TCP')
 {
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsAdequateDatabasePort '.PHP_EOL;
+    }
+
     $DataVersion = '20220120';
     $Result['code'] = '';
     $Result['service'] = '';
@@ -667,4 +702,135 @@ function IsAdequateDatabasePort($System, $PortNumber, $Proto = 'TCP')
     }
 
     return $Result;
+}
+
+/**
+ * IsAssocArray checks wether or not an array is associative
+ * @param   array   $Data the array to check
+ * @return  boolean TRUE if is an associative array, FALSE otherwise
+ * @since   0.0.7
+ * @see     
+ * @todo
+ */
+function IsAssocArray(&$Data)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsAssocArray '.PHP_EOL;
+    }
+
+    //Check if we have an array
+    if (is_array($Data) === FALSE)
+    {
+        return FALSE;
+    }
+    //From PHP 8.1 on, there is a function for it
+    if ((PHP_MAJOR_VERSION === 8)&&(PHP_MINOR_VERSION>=1))
+    {
+        if (array_is_list($Data) === TRUE)
+        {
+            //Array is a list -NUMERIC ARRAY-
+            return FALSE;
+        }
+        else
+        {
+            //Array is not a list -ASSOC ARRAY-
+            return TRUE;
+        }
+    }
+    else
+    {
+        return is_array($Data)&&array_diff_key($Data,array_keys(array_keys($Data)));
+    }
+}
+
+/**
+ * IsNumericArray checks wether or not an array is numeric
+ * @param   array   $Data the array to check
+ * @return  boolean TRUE if it is a numeric array, FALSE otherwise
+ * @since   0.0.7
+ * @see     
+ * @todo
+ */
+function IsNumericArray(&$Data)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsNumericArray '.PHP_EOL;
+    }
+
+    //Check if we have an array
+    if (is_array($Data) === FALSE)
+    {
+        return FALSE;
+    }
+
+    if (IsAssocArray($Data) === TRUE)
+    {
+        //If it is associative, it is not numeric
+        return FALSE;
+    }
+    else
+    {
+        return TRUE;
+    }
+}
+
+/**
+ * IsMultiArray checks if the array is single or multidimensional.
+ * @param   array   $Data The array to check
+ * @return  mixed   FALSE if it is not an array, 1 for unidimensional arrays and 2 for multidimensional arrays
+ * @since   0.0.7
+ * @see     
+ * @todo
+ */
+function IsMultiArray(&$Data)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsMultiArray '.PHP_EOL;
+    }
+
+    if (is_array($Data) === FALSE)
+    {
+        return FALSE;
+    }
+
+    $SimpleCount = count($Data);
+    $RecursiveCount = count($Data, COUNT_RECURSIVE);
+    if ($SimpleCount === $RecursiveCount)
+    {
+        //Unidimensional array
+        return 1;
+    }
+    else
+    {
+        //Multidimensional array
+        return 2;
+    }
+}
+
+/**
+ * IsMySQLAssocDataStructure checks if the array has the structure of a MySQL ASSOC Data Structure -plus Metadata-
+ * @param   array   $Data The array to check
+ * @return  mixed   FALSE if it is not an array, 1 for unidimensional arrays and 2 for multidimensional arrays
+ * @since   0.0.7
+ * @see     
+ * @todo
+ */
+function IsMySQLAssocDataStructure(&$Data)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsMySQLAssocDataStructure '.PHP_EOL;
+    }
+
+    if ((isset($Data['Columns']) === FALSE)||(isset($Data['Rows']) === FALSE)||(isset($Data['Metadata']) === FALSE)||(isset($Data['Data']) === FALSE))
+    {
+        return FALSE;
+    }
+    else
+    {
+        return TRUE;
+    }
 }

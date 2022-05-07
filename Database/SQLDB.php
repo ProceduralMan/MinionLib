@@ -13,9 +13,6 @@
  * @version 1.0 initial version
  * @package Minion
  * @todo INCLUIR TODAS LAS BASES DE DATOS DE FICHERO TIPO BERKELEYDB https://www.php.net/manual/es/intro.dba.php
- * @todo La de base de datos debiera exponer solo cuatro funciones, Lee(Devuelve array asociativo), Actualiza(T/F), Inserta(T/F), InsertaConID(Devuelve ID)=> esta debiera incluir el SELECT SCOPE_IDENTITY();, chequear que fuera INSERT... etc etc. Tal vez tb un ¿tienefilas?
- * @todo 1) Eliminar el keep open de todas las funciones => HECHO 2) Deprecar el registro y el sanity check 
- * @todo 3) Hacer atómicas las funciones e incluir los valores de registro en un array de las mismas 4) Contar todo eso en los MD y generar v0.0.6
  * @see
  * MySQL Info
  *      https://stackoverflow.com/questions/45080641/specifying-socket-option-on-mysqli-connect
@@ -1979,12 +1976,12 @@ function StripValuesFromQuery($Query)
             $Index++;
             if (IsEven($Index)&&(DEBUGMODE === TRUE))
             {
-                echo $Index.' is even. Adding to ending enclosure'.PHP_EOL;
+                //echo $Index.' is even. Adding to ending enclosure'.PHP_EOL;
                 $EndingEnclosures[] = $EnclosurePos;
             }
             elseif (IsOdd($Index)&&(DEBUGMODE === TRUE))
             {
-                echo $Index.' is odd. Adding to beginning enclosure'.PHP_EOL;
+                //echo $Index.' is odd. Adding to beginning enclosure'.PHP_EOL;
                 $BegginingEnclosures[] = $EnclosurePos;
             }
         }
@@ -2052,12 +2049,28 @@ function JustOneStatement($Query)
     $NumDeletes = substr_count($Query, 'DELETE ');
     $NumInserts = substr_count($Query, 'INSERT ');
     $NumAlters = substr_count($Query, 'ALTER ');
-    $AllStatements = $NumSelect+$NumUpdates+$NumDeletes+$NumInserts+$NumAlters;
-    if ($AllStatements>1)
-    {
-        return FALSE;
-    }
+    $NumMerges = substr_count($Query, 'ON DUPLICATE KEY UPDATE ');
 
+    $AllStatements = $NumSelect+$NumUpdates+$NumDeletes+$NumInserts+$NumAlters+$NumMerges;
+
+    //echo 'Merges:'.$NumMerges.' ALL: '.$AllStatements.' Inserts:'.$NumInserts;
+    if ($NumMerges === 0)
+    {
+        if ($AllStatements>1)
+        {
+            return FALSE;
+        }
+    }
+    else
+    {
+        //UPDATE is contained on ON DUPLICATE KEY UPDATE. So we substract the updates
+        $AllStatements-=$NumUpdates;
+        if (($AllStatements>2)||($NumInserts !== 1))
+        {
+            return FALSE;
+        }
+    }
+    //echo '=>ON to PCs'.PHP_EOL;
     //We take out the values so as to count relevant tokens
     $StrippedQuery = StripValuesFromQuery($Query);
 
@@ -2071,6 +2084,293 @@ function JustOneStatement($Query)
     }
 
     return TRUE;
+}
+
+/**
+ * TableToArray
+ * Reads a table to an array, same structure as an ARRAY MySQL Query
+ * The offset of the initial row is 0
+ * @param   array   $Data               The array to populate with data
+ * @param   string  $TableName          The table to load
+ * @param   array   $ConnectionIndex    The connection to use
+ * @param   string  $FilterCondition    A WHERE condition to filter the table
+ * @param   int     $Offset             The offset to apply. 0 means from the beggining.
+ * @param   int     $NumRows            The number of rows to load. 18446744073709551615 means all rows as MYSQL uses unisgned 64 bit integers. But PHP has no
+ *                                          intrinsic support of unsigned integers, so we use PHP_INT_MAX = 9223372036854775807. So please use no more than
+ *                                          9 (International System) Trillions of records, even if MySQl allows you to double that
+ * @return  array   $Data by reference
+ * @since   0.0.7
+ * @see     https://dev.mysql.com/doc/refman/8.0/en/select.html
+ * @todo
+ */
+function TableToArray(&$Data, $TableName, $ConnectionIndex, $FilterCondition = "", $Offset = 0, $NumRows = PHP_INT_MAX)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> TableToArray '.PHP_EOL;
+    }
+
+    $Query = "SELECT * FROM ".$TableName." ".$FilterCondition." LIMIT ".$Offset.",".$NumRows;
+    $MySQLData = Read($ConnectionIndex, $Query, 'ARRAY');
+
+    if (is_array($MySQLData) === TRUE)
+    {
+        $Data = $MySQLData['Data'];
+
+        return TRUE;
+    }
+    else
+    {
+        return FALSE;
+    }
+}
+
+//Only Assoc arrays allowed
+
+
+
+/**
+ * AssocToTable writes an associative array into a DB Table
+ * We use MySQL ASSOC structure
+ * array(3) {
+ *   ["Columns"]=>
+ *   int(4)
+ *   ["Rows"]=>
+ *   int(3)
+ *   ["Data"]=>
+ *   array(3) {
+ *     [0]=>
+ *     array(4) {
+ *       ["actor_id"]=>
+ *       string(1) "1"
+ *       ["first_name"]=>
+ *       string(8) "PENELOPE"
+ *       ["last_name"]=>
+ *       string(7) "GUINESS"
+ *       ["last_update"]=>
+ *       string(19) "2006-02-15 04:34:33"
+ *     }
+ *     [1]=>
+ *     array(4) {
+ *       ["actor_id"]=>
+ *       string(1) "2"
+ *       ["first_name"]=>
+ *       string(4) "NICK"
+ *       ["last_name"]=>
+ *       string(8) "WAHLBERG"
+ *       ["last_update"]=>
+ *       string(19) "2006-02-15 04:34:33"
+ *     }
+ *   }
+ * }
+ * 
+ * @param   array     $Data               The data to insert
+ * @param   string    $TableName          The table to insert into
+ * @param   array     $ConnectionIndex    The connection to use
+ * @param   boolean   $FullRewrite        TRUE if the table is to be deleted and rewritten with the array info, false otherwise
+ * @return  boolean   TRUE on success, FALSE on failure
+ * @since   0.0.7
+ * @see     
+ * @todo  ***TEST ALL. 
+ */
+function AssocToTable(&$Data, $TableName, $ConnectionIndex, $FullRewrite = FALSE)
+{
+    $MySQLDS = Array();
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> AssocToTable '.PHP_EOL;
+    }
+    print_r($Data);
+    //Check if not empty
+    if (empty($Data) === TRUE)
+    {
+        return FALSE;
+    }
+
+    /*Check if it is an associative array.TAKE THIS OUT AS WE USE MULTYARRAYS TO HOLD DIFFERENT RECORDS (numeric+assoc)
+    if (IsAssocArray($Data) === FALSE)
+    {
+        return FALSE;
+    }
+    */
+
+    //Check if it has MySQL ASSOC structure
+    if (IsMySQLAssocDataStructure($Data) === FALSE)
+    {
+        $MySQLDS = AssocToMySQLAssoc($Data, $TableName, $ConnectionIndex, FALSE);
+    }
+    else
+    {
+        $MySQLDS = $Data;
+    }
+    //print_r($MySQLDS);
+
+    //die();
+    //Write data to table
+    if ($FullRewrite === TRUE)
+    {
+        //1.- TruncateTable
+        $Result = Truncate($ConnectionIndex, $TableName);
+        if ($Result === FALSE)
+        {
+            return FALSE;
+        }
+
+        //2.- Insert values from array
+        $Result2 = InsertFromMySQlAssocDataStructure($MySQLDS, $TableName, $ConnectionIndex);
+        if ($Result2 === FALSE)
+        {
+            return FALSE;
+        }
+    }
+    else
+    {
+        //Merge data into table
+        $Result = MergeFromMySQlAssocDataStructure($MySQLDS, $TableName, $ConnectionIndex);
+        if ($Result === FALSE)
+        {
+            return FALSE;
+        }
+    }
+}
+
+/**
+ * GetMySQLTableMetadata gets  metadata from a MySQL table/resultset
+ * @param   string  $TableName          The table to insert into
+ * @param   array   $ConnectionIndex    The connection to use
+ * @return  mixed   The metadata or FALSE on failure
+ */
+function GetMySQLTableMetadata($TableName, $ConnectionIndex)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> GetMySQLTableMetadata '.PHP_EOL;
+    }
+
+    $Query = "SELECT * FROM ".$TableName." LIMIT 1;";
+
+    $ResultSet = Read($ConnectionIndex, $Query, "ASSOC");
+    if ($ResultSet === FALSE)
+    {
+        $ErrorMessage = 'Unable to connect to table: '.$TableName;
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    return $ResultSet['Metadata'];
+}
+
+/**
+ * TableToAssoc
+ * Reads a table to an array, same structure as an ASSOC MySQL Query
+ * The offset of the initial row is 0
+ * @param   array   $Data               The array to populate with data
+ * @param   string  $TableName          The table to load
+ * @param   array   $ConnectionIndex    The connection to use
+ * @param   string  $FilterCondition    A WHERE condition to filter the table
+ * @param   int     $Offset             The offset to apply. 0 means from the beggining.
+ * @param   int     $NumRows            The number of rows to load. 18446744073709551615 means all rows as MYSQL uses unisgned 64 bit integers. But PHP has no
+ *                                          intrinsic support of unsigned integers, so we use PHP_INT_MAX = 9223372036854775807. So please use no more than
+ *                                          9 (International System) Trillions of records, even if MySQl allows you to double that
+ * @return  array   $Data by reference                              
+ * @since   0.0.7
+ * @see     https://dev.mysql.com/doc/refman/8.0/en/select.html
+ * @todo
+ */
+function TableToAssoc(&$Data, $TableName, $ConnectionIndex, $FilterCondition = "", $Offset = 0, $NumRows = PHP_INT_MAX)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> TableToAssoc '.PHP_EOL;
+    }
+
+    $Query = "SELECT * FROM ".$TableName." ".$FilterCondition." LIMIT ".$Offset.",".$NumRows;
+    $MySQLData = Read($ConnectionIndex, $Query, 'ASSOC');
+    if (is_array($MySQLData) === TRUE)
+    {
+        //echo '*** READ COUNT***'.count($MySQLData).PHP_EOL;
+        if (!empty($MySQLData['Data']))
+        {
+            //$Data = $MySQLData['Data'];
+            //echo '*** DATA COUNT***'.count($Data).PHP_EOL;
+            //We do keep all the resultset
+            $Data = $MySQLData;
+        }
+        else
+        {
+            //Comes an empty resultset. Return NULL
+            $Data = NULL;
+        }
+
+        return TRUE;
+    }
+    else
+    {
+        return FALSE;
+    }
+}
+
+/**
+ * NumericToTable writes a numeric array to a DB Table
+ * Just converts itself into assoc array and calls AssocToTable
+ * The column names are specified on a lateral parametric array
+ * Array type 
+ *   array(3) {
+ *     [0]=>
+ *     array(4) {
+ *       [0]=>
+ *       string(1) "1"
+ *       [1]=>
+ *       string(8) "PENELOPE"
+ *       [2]=>
+ *       string(7) "GUINESS"
+ *       [3]=>
+ *       string(19) "2006-02-15 04:34:33"
+ *     }
+ *   }
+ * 
+ * @param   array   $Data               The data to insert
+ * @param   string  $TableName          The table to insert into
+ * @param   array   $ConnectionIndex    The connection to use
+ * @param   array   $ColumnNames        The array of column names to use. First column *MUST* be the PK!    
+ * @param   boolean $FullRewrite        TRUE if the table is to be deleted and rewritten with the array info, false otherwise
+ * @return  boolean TRUE on success, FALSE on failure
+ * @since   0.0.7
+ * @see     
+ * @todo 
+ */
+function NumericToTable($Data, $TableName, $ConnectionIndex, $ColumnNames, $FullRewrite = FALSE)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> NumericToTable '.PHP_EOL;
+    }
+
+    $MySQLAssoc = array();
+    $AssocMain = array();
+    $AssocSecondary = array();
+    $Rows = 0;
+    $Columns = 0;
+    foreach ($Data['Data'] as $Key => $Value)
+    {
+        foreach ($Value AS $SecKey => $ColumnValue)
+        {
+            $AssocSecondary[$ColumnNames[$SecKey]] = $ColumnValue;
+            $Columns++;
+        }
+        $AssocMain[$Key] = $AssocSecondary;
+        //Clear secondary array
+        unset($AssocSecondary);
+        $AssocSecondary = array();
+        $Rows++;
+    }
+
+    $MySQLAssoc['Columns'] = $Columns;
+    $MySQLAssoc['Rows'] = $Rows;
+    $MySQLAssoc['Data'] = $AssocMain;
+
+    return AssocToTable($MySQLAssoc, $TableName, $ConnectionIndex, $FullRewrite);
 }
 
 /**
@@ -2192,11 +2492,15 @@ function Read($ConnectionIndex, $Query, $Output)
     //var_dump($TheData);
     $ResultSet['Columns'] = mysqli_field_count($ConnectionLink);
     $ResultSet['Rows'] = mysqli_num_rows($TheData);
+    $ResultSet['Metadata'] = MySQLTableMetadata($TheData, TRUE);
 
-    //Return NULL if there are no rows
+    //Return and empty resultset if there are no rows
     if ($ResultSet['Rows'] === 0)
     {
-        return NULL;
+        $ResultSet['Data'] = NULL;
+
+        return $ResultSet;
+        //return NULL;
     }
 
     //Get data
@@ -2420,11 +2724,292 @@ function Read($ConnectionIndex, $Query, $Output)
 
         return FALSE;
     }
+    //print_r($ResultSet);
 
+    //die();
     //Return Data
     return $ResultSet;
 }
 
+
+/**
+ * MySQLTableMetadata gets the metadata on the fields included in the resultset
+ * Seem to be giving back a charsetnr inconsistent with both the DB-defined COLLATION/CHARSET and mysqli_get_charset
+ * - which also do not agree between them- so we are ignoring this data
+ * @param   array   $ResultSet      The MySQL resultset to check
+ * @param   boolean $FullInfo       The flag that marks if all metadata fields should be returned
+ * @return  array                   The metadata info
+ * @since   0.0.7
+ * @see     https://www.php.net/manual/en/mysqli-result.fetch-fields.php
+ * @todo
+ */
+function MySQLTableMetadata($ResultSet, $FullInfo = FALSE)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> MySQLTableMetadata '.PHP_EOL;
+    }
+
+    $Metadata = array();
+    //print_r(get_defined_constants(TRUE));
+    //$CharsetArray = get_object_vars(mysqli_get_charset($ConnectionLink));
+    $MetadataObjArr = mysqli_fetch_fields($ResultSet);
+    print_r($MetadataObjArr);
+    //print_r($CharsetArray);
+    //We prepare a pure assoc metadata array
+    foreach ($MetadataObjArr as $FieldKey => $FieldContents)
+    {
+        $FieldMetadata = get_object_vars($FieldContents);
+        $Metadata[$FieldMetadata['orgname']]['FieldName'] = $FieldMetadata['name'];                         //The field name on the resultset. Can be an alias
+        $Metadata[$FieldMetadata['orgname']]['ColumnName'] = $FieldMetadata['orgname'];                     //Original column name if an alias was specified
+        $Metadata[$FieldMetadata['orgname']]['Type'] = $FieldMetadata['type'];                              //The data type used for this field
+        $Metadata[$FieldMetadata['orgname']]['TypeDesc'] = MySQLTypeCodeExplode($FieldMetadata['type']);    //The type constant corresponding to the field type
+        if ($FullInfo === TRUE)
+        {
+            $Metadata[$FieldMetadata['orgname']]['RSTable'] = $FieldMetadata['table'];              //The table name on the resultset. Can be an alias
+            $Metadata[$FieldMetadata['orgname']]['DBTable'] = $FieldMetadata['orgtable'];           //Original table name if an alias was specified
+            $Metadata[$FieldMetadata['orgname']]['MaxValueSize'] = $FieldMetadata['max_length'];    //The maximum width of the field for the result set
+            $Metadata[$FieldMetadata['orgname']]['DefinedSize'] = $FieldMetadata['length'];         //The width of the field, in bytes, as specified in the table definition. Note that this number (bytes) might differ from your table definition value (characters), depending on the character set you use. For example, the character set utf8 has 3 bytes per character, so varchar(10) will return a length of 30 for utf8 (10*3), but return 10 for latin1 (10*1).
+            //$Metadata[$FieldMetadata['orgname']]['CharSetConst'] = $FieldMetadata['charsetnr'];     //The character set number (id) for the field.
+            $Metadata[$FieldMetadata['orgname']]['Flags'] = $FieldMetadata['flags'];                //An integer representing the bit-flags for the field.
+            $Metadata[$FieldMetadata['orgname']]['FlagsDesc'] = MySQLRSFlags($FieldMetadata['flags']);  //Description of the flags that have been set
+            $Metadata[$FieldMetadata['orgname']]['Decimals'] = $FieldMetadata['decimals'];          //The number of decimals used (for integer fields)
+        }
+    }
+
+    return $Metadata;
+}
+
+/**
+ * MySQLTypeCodeExplode returns the const STRING of a MySQL Type code
+ * Those are:
+ * - MYSQLI_TYPE_DECIMAL:       Field is defined as DECIMAL
+ * - MYSQLI_TYPE_NEWDECIMAL:    Precision math DECIMAL or NUMERIC field (MySQL 5.0.3 and up)
+ * - MYSQLI_TYPE_BIT:           Field is defined as BIT (MySQL 5.0.3 and up)
+ * - MYSQLI_TYPE_TINY:          Field is defined as TINYINT
+ * - MYSQLI_TYPE_SHORT:         Field is defined as SMALLINT
+ * - MYSQLI_TYPE_LONG:          Field is defined as INT
+ * - MYSQLI_TYPE_FLOAT:         Field is defined as FLOAT
+ * - MYSQLI_TYPE_DOUBLE:        Field is defined as DOUBLE
+ * - MYSQLI_TYPE_NULL:          Field is defined as DEFAULT NULL
+ * - MYSQLI_TYPE_TIMESTAMP:     Field is defined as TIMESTAMP
+ * - MYSQLI_TYPE_LONGLONG:      Field is defined as BIGINT
+ * - MYSQLI_TYPE_INT24:         Field is defined as MEDIUMINT
+ * - MYSQLI_TYPE_DATE:          Field is defined as DATE
+ * - MYSQLI_TYPE_TIME:          Field is defined as TIME
+ * - MYSQLI_TYPE_DATETIME:      Field is defined as DATETIME
+ * - MYSQLI_TYPE_YEAR:          Field is defined as YEAR
+ * - MYSQLI_TYPE_NEWDATE:       Field is defined as DATE
+ * - MYSQLI_TYPE_INTERVAL:      Field is defined as INTERVAL
+ * - MYSQLI_TYPE_ENUM:          Field is defined as ENUM
+ * - MYSQLI_TYPE_SET:           Field is defined as SET
+ * - MYSQLI_TYPE_TINY_BLOB:     Field is defined as TINYBLOB
+ * - MYSQLI_TYPE_MEDIUM_BLOB:   Field is defined as MEDIUMBLOB
+ * - MYSQLI_TYPE_LONG_BLOB:     Field is defined as LONGBLOB
+ * - MYSQLI_TYPE_BLOB:          Field is defined as BLOB, TEXT, TINYTEXT, MEDIUMTEXT or LONGTEXT
+ * - MYSQLI_TYPE_VAR_STRING:    Field is defined as VARCHAR or VARBINARY
+ * - MYSQLI_TYPE_STRING:        Field is defined as CHAR or BINARY
+ * - MYSQLI_TYPE_CHAR:          Field is defined as TINYINT. For CHAR, see MYSQLI_TYPE_STRING
+ * - MYSQLI_TYPE_GEOMETRY:      Field is defined as GEOMETRY
+ * - MYSQLI_TYPE_JSON:          Field is defined as JSON. Only valid for mysqlnd and MySQL 5.7.8 and up.
+ *
+ * @param   int     $MySQLTypeCode  The type code
+ * @return  string                  The CONST literal for the code
+ * @since   0.0.7
+ * @see     https://www.php.net/manual/en/mysqli.constants.php
+ * @todo
+ */
+function MySQLTypeCodeExplode($MySQLTypeCode)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> MySQLTypeCodeExplode '.PHP_EOL;
+    }
+
+    switch ($MySQLTypeCode)
+    {
+        case 0:
+            return 'MYSQLI_TYPE_DECIMAL';       //Field is defined as DECIMAL
+        case 1:
+            return 'MYSQLI_TYPE_TINY';          //Field is defined as TINYINT. We never return MYSQLI_TYPE_CHAR has has no use.
+        case 2:
+            return 'MYSQLI_TYPE_SHORT';         //Field is defined as SMALLINT
+        case 3:
+            return 'MYSQLI_TYPE_LONG';          //Field is defined as INT
+        case 4:
+            return 'MYSQLI_TYPE_FLOAT';         //Field is defined as FLOAT
+        case 5:
+            return 'MYSQLI_TYPE_DOUBLE';        //Field is defined as DOUBLE
+        case 6:
+            return 'MYSQLI_TYPE_NULL';          //Field is defined as DEFAULT NULL
+        case 7:
+            return 'MYSQLI_TYPE_TIMESTAMP';     //Field is defined as TIMESTAMP
+        case 8:
+            return 'MYSQLI_TYPE_LONGLONG';      //Field is defined as BIGINT
+        case 9:
+            return 'MYSQLI_TYPE_INT24';         //Field is defined as MEDIUMINT
+        case 10:
+            return 'MYSQLI_TYPE_DATE';          //Field is defined as DATE
+        case 11:
+            return 'MYSQLI_TYPE_TIME';          //Field is defined as TIME
+        case 12:
+            return 'MYSQLI_TYPE_DATETIME';      //Field is defined as DATETIME
+        case 13:
+            return 'MYSQLI_TYPE_YEAR';          //Field is defined as YEAR
+        case 14:
+            return 'MYSQLI_TYPE_NEWDATE';       //Field is defined as DATE
+        case 16:
+            return 'MYSQLI_TYPE_BIT';           //Field is defined as BIT (MySQL 5.0.3 and up)
+        case 245:
+            return 'MYSQLI_TYPE_JSON';          //Field is defined as JSON. Only valid for mysqlnd and MySQL 5.7.8 and up.
+        case 246:
+            return 'MYSQLI_TYPE_NEWDECIMAL';    //Precision math DECIMAL or NUMERIC field (MySQL 5.0.3 and up)
+        case 247:
+            return 'MYSQLI_TYPE_ENUM';          //Field is defined as ENUM. We never return MYSQLI_TYPE_INTERVAL
+        case 248:
+            return 'MYSQLI_TYPE_SET';           //Field is defined as SET
+        case 249:
+            return 'MYSQLI_TYPE_TINY_BLOB';     //Field is defined as TINYBLOB
+        case 250:
+            return 'MYSQLI_TYPE_MEDIUM_BLOB';   //Field is defined as MEDIUMBLOB
+        case 251:
+            return 'MYSQLI_TYPE_LONG_BLOB';     //Field is defined as LONGBLOB
+        case 252:
+            return 'MYSQLI_TYPE_BLOB';          //Field is defined as BLOB, TEXT, TINYTEXT, MEDIUMTEXT or LONGTEXT
+        case 253:
+            return 'MYSQLI_TYPE_VAR_STRING';    //Field is defined as VARCHAR or VARBINARY
+        case 254:
+            return 'MYSQLI_TYPE_STRING';        //Field is defined as CHAR or BINARY
+        case 255:
+            return 'MYSQLI_TYPE_GEOMETRY';      //Field is defined as GEOMETRY
+    }
+}
+
+/**
+ * MySQLProperQuote quotes the field according to the data type
+ * @param type $Field
+ * @param type $TypeConst
+ * @return type
+ * @since   0.0.7
+ * @see     https://dev.mysql.com/doc/refman/8.0/en/literals.html
+ *          https://dev.mysql.com/doc/refman/8.0/en/date-and-time-types.html
+ *          https://dev.mysql.com/doc/refman/8.0/en/string-types.html
+ * @todo
+ */
+function MySQLProperQuote($Field, $TypeConst)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> MySQLProperQuote '.PHP_EOL;
+    }
+
+    //Ensure null on null values
+    if (is_null($Field))
+    {
+        return "NULL";
+    }
+
+    //Process the rest
+    switch ($TypeConst)
+    {
+        //String types go quoted and properly escaped if there are quotes inside, but only if not empty.
+        case 'MYSQLI_TYPE_STRING':
+        case 'MYSQLI_TYPE_VAR_STRING':
+        case 'MYSQLI_TYPE_BLOB':
+        case 'MYSQLI_TYPE_TINY_BLOB':
+        case 'MYSQLI_TYPE_TINY_BLOB':
+        case 'MYSQLI_TYPE_MEDIUM_BLOB':
+        case 'MYSQLI_TYPE_LONG_BLOB':
+        case 'MYSQLI_TYPE_ENUM':
+        case 'MYSQLI_TYPE_SET':
+            if (empty($Field))
+            {
+                return "NULL";
+            }
+            else
+            {
+                $EscapedField = mb_ereg_replace('[\x00\x0A\x0D\x1A\x22\x27\x5C]', '\\\0', $Field);
+                //echo $TypeConst."->\'".$EscapedField."\'".PHP_EOL;
+
+                return "'$EscapedField'";
+            }
+
+        //All Date and Time types go quoted excep MYSQLI_TYPE_YEAR, but only if not empty.
+        case 'MYSQLI_TYPE_DATE':
+        case 'MYSQLI_TYPE_TIME':
+        case 'MYSQLI_TYPE_DATETIME':
+        case 'MYSQLI_TYPE_NEWDATE':
+        case 'MYSQLI_TYPE_TIMESTAMP':
+            if (empty($Field))
+            {
+                return "NULL";
+            }
+            else
+            {
+                //echo $TypeConst."->\'".$Field."\'".PHP_EOL;
+
+                return "'$Field'";
+            }
+
+        //All the rest go unquoted
+        default:
+            //echo $TypeConst."->".$Field.PHP_EOL;
+
+            return $Field;
+    }
+}
+
+/**
+ * MySQLRSFlags explicits the MySQL flags that have been set
+ * @param   int     $FlagNumber     The flag number
+ * @return  string                  The set flag strings
+ * @since   0.0.7
+ * @see     
+ * @todo
+ */
+function MySQLRSFlags($FlagNumber)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> MySQLRSFlags '.PHP_EOL;
+    }
+
+    //Load available FLAGS
+    $DefinedConstants = get_defined_constants(TRUE);
+    $DefinedFlags = array();
+    foreach ($DefinedConstants['mysqli'] as $Key => $Value)
+    {
+        if (preg_match('/MYSQLI_(.*)_FLAG$/', $Key, $Matches))
+        {
+            if (!array_key_exists($Value, $DefinedFlags))
+            {
+                $DefinedFlags[$Value] = $Matches[1];
+            }
+        }
+    }
+
+    //Find FLAGS that have been set
+    $JustOne = TRUE;
+    $SetFlags = "";
+    foreach ($DefinedFlags as $Key => $Value)
+    {
+        if ($FlagNumber&$Key)
+        {
+            if ($JustOne === TRUE)
+            {
+                $SetFlags = $Value;
+                $JustOne = FALSE;
+            }
+            else
+            {
+                $SetFlags .= ' | '.$Value;
+            }
+        }
+    }
+
+    //return FLAGS that have been set
+    return $SetFlags;
+}
 /**
  * IsLegitUpdate
  * Parses UPDATE sentence to make sure it is safe and sound
@@ -2605,7 +3190,7 @@ function Insert($ConnectionIndex, $Query)
 {
     if (DEBUGMODE)
     {
-        echo date("Y-m-d H:i:s").' -> Insert '.PHP_EOL;
+        echo date("Y-m-d H:i:s").' -> Insert: '.$Query.PHP_EOL;
     }
 
     $SoundConnection = TestConnection($ConnectionIndex);
@@ -2687,6 +3272,139 @@ function Insert($ConnectionIndex, $Query)
 
     return $ResultSet;
 }
+
+/**
+ * IsLegitMerge
+ * Parses INSERT ...ON DUPLICATE KEY UPDATE sentence to make sure it is safe and sound
+ * @param   string  $Query  The query
+ * @return  boolean TRUE if sentence is legit or false otherwise
+ * @since   0.0.6
+ * @see     https://dev.mysql.com/doc/refman/8.0/en/select.html
+ * @todo
+ */
+function IsLegitMerge($Query)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsLegitMerge '.PHP_EOL;
+    }
+
+    if (SmellyStatement($Query) === TRUE)
+    {
+        return FALSE;
+    }
+
+    $FirstStatement = StatementType($Query);
+    if ($FirstStatement !== 'INSERT')
+    {
+        return FALSE;
+    }
+
+    if (JustOneStatement($Query, $FirstStatement) === FALSE)
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+/**
+ * Merge 
+ * merges info into the database
+ * @param   array   $ConnectionIndex    The connection heap
+ * @param   string  $Query              The query
+ * @return  mixed   Affected rows or FALSE if UPDATE fails
+ * @since   0.0.3
+ * @see     
+ * @todo
+ */
+function Merge($ConnectionIndex, $Query)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> Merge: '.$Query.PHP_EOL;
+    }
+
+    $SoundConnection = TestConnection($ConnectionIndex);
+    //If there are connection problems, return FALSE
+    if ($SoundConnection === FALSE)
+    {
+        $ErrorMessage = 'Unable to make use of connection registered by index: '.$ConnectionIndex;
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    $InData = $GLOBALS['DB'][$ConnectionIndex];
+
+    //ValidateQuery
+    if (IsLegitMerge($Query) === FALSE)
+    {
+        $ErrorMessage = 'Invalid INSERT ...ON DUPLICATE KEY UPDATE query: '.$Query;
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    //Init connection
+    $OutData = array();
+    $ConnectionLink = MySQLInit($OutData);
+    if (!$ConnectionLink)
+    {
+        $ErrorMessage = 'MySQLInit failure';
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    //Establish options registered
+    if (MySQLOptions($InData, $OutData, $ConnectionLink) === FALSE)
+    {
+        $OutData['Success'] = TRUE;
+        $OutData['ReturnValue'] = 'MySQLOptions test failed';
+
+        return FALSE;
+    }
+
+    //Connect
+    if (MySQLRealConnect($InData, $OutData, $ConnectionLink) === FALSE)
+    {
+        $OutData['Success'] = TRUE;
+        $OutData['ReturnValue'] = 'MySQLRealConnect test failed with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+
+        return FALSE;
+    }
+
+    //Now insert
+    //Fucks sentence $EscapedQuery = mysqli_real_escape_string($ConnectionToUse, $Query);
+    if (mysqli_real_query($ConnectionLink, $Query) === FALSE)
+    {
+        $ErrorMessage = 'Merge error with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    $ResultSet['AffectedRows'] = mysqli_affected_rows($ConnectionLink);
+
+    //Close connection
+    if (mysqli_close($ConnectionLink) === FALSE)
+    {
+        $ErrorMessage = 'Error closing connection with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    //Return values
+    if ($ResultSet['AffectedRows'] === 0)
+    {
+        return NULL;
+    }
+
+    return $ResultSet;
+}
+
 /**
  * IsLegitDelete
  * Parses DELETE sentence to make sure it is safe and sound
@@ -3110,4 +3828,286 @@ function TestResurrectConnection($ConnectionIndex)
     }
 */
     return $ConnectionToUse;
+}
+
+/**
+ * Truncate empties a table
+ * @param   array   $ConnectionIndex the connection to use
+ * @param   string  $TableName the table to empty
+ * @return  mixed   The affected row or FALSE if error
+ * @since   0.0.7
+ * @see     
+ * @todo 
+ */
+function Truncate($ConnectionIndex, $TableName)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> Truncate '.PHP_EOL;
+    }
+
+    $SoundConnection = TestConnection($ConnectionIndex);
+    //If there are connection problems, return FALSE
+    if ($SoundConnection === FALSE)
+    {
+        $ErrorMessage = 'Unable to make use of connection registered by index: '.$ConnectionIndex;
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    $InData = $GLOBALS['DB'][$ConnectionIndex];
+
+    //ValidateQuery
+    if (IsValidMySQLName($TableName) === FALSE)
+    {
+        $ErrorMessage = 'Invalid MySQL Object name: '.$TableName;
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+    $Query = "TRUNCATE ".$TableName.';';
+
+    //Init connection
+    $OutData = array();
+    $ConnectionLink = MySQLInit($OutData);
+    if (!$ConnectionLink)
+    {
+        $ErrorMessage = 'MySQLInit failure';
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    //Establish options registered
+    if (MySQLOptions($InData, $OutData, $ConnectionLink) === FALSE)
+    {
+        $OutData['Success'] = TRUE;
+        $OutData['ReturnValue'] = 'MySQLOptions test failed';
+
+        return FALSE;
+    }
+
+    //Connect
+    if (MySQLRealConnect($InData, $OutData, $ConnectionLink) === FALSE)
+    {
+        $OutData['Success'] = TRUE;
+        $OutData['ReturnValue'] = 'MySQLRealConnect test failed with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+
+        return FALSE;
+    }
+
+    //Now update
+    if (mysqli_real_query($ConnectionLink, $Query) === FALSE)
+    {
+        $ErrorMessage = 'Update error with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    $ResultSet['AffectedRows'] = mysqli_affected_rows($ConnectionLink);
+
+    //Close connection
+    if (mysqli_close($ConnectionLink) === FALSE)
+    {
+        $ErrorMessage = 'Error closing connection with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    //Return values
+    if ($ResultSet['AffectedRows'] === 0)
+    {
+        return NULL;
+    }
+
+    return $ResultSet;
+}
+
+/**
+ * InsertFromMySQlAssocDataStructure fills a table with data from an MySQL ASSOC style array
+ * Sample ASSOC MySQl Structure
+ * array(3) {
+ *   ["Columns"]=>
+ *   int(4)
+ *   ["Rows"]=>
+ *   int(3)
+ *   ["Data"]=>
+ *   array(3) {
+ *     [0]=>
+ *     array(4) {
+ *       ["actor_id"]=>
+ *       string(1) "1"
+ *       ["first_name"]=>
+ *       string(8) "PENELOPE"
+ *       ["last_name"]=>
+ *       string(7) "GUINESS"
+ *       ["last_update"]=>
+ *       string(19) "2006-02-15 04:34:33"
+ *     }
+ *     [1]=>
+ *     array(4) {
+ *       ["actor_id"]=>
+ *       string(1) "2"
+ *       ["first_name"]=>
+ *       string(4) "NICK"
+ *       ["last_name"]=>
+ *       string(8) "WAHLBERG"
+ *       ["last_update"]=>
+ *       string(19) "2006-02-15 04:34:33"
+ *     }
+ *   }
+ * }
+ * 
+ * @param array     $Data               The data to insert
+ * @param string    $TableName          The table to insert into
+ * @param array     $ConnectionIndex    The connection to use
+ * @return boolean  TRUE on success, FALSE on failure
+ * @since   0.0.7
+ * @see     
+ * @todo 
+ */
+function InsertFromMySQlAssocDataStructure($Data, $TableName, $ConnectionIndex)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> InsertFromMySQlAssocDataStructure '.PHP_EOL;
+    }
+
+    //Might not be a MySQLAssoc Data Structure if we are called directly
+    if (!isset($Data['Data']))
+    {
+        return FALSE;
+    }
+    //print_r($Data);
+    $QueryMain = "INSERT INTO ".$TableName." (";
+    $QueryValues = "(";
+    $FirstTimePassed = FALSE;
+    foreach ($Data['Data'] as $Key => $Value)
+    {
+        foreach ($Value AS $ColumnName => $ColumnValue)
+        {
+            if ($FirstTimePassed === FALSE)
+            {
+                $QueryMain .= $ColumnName.", ";
+            }
+            $QueryValues .= MySQLProperQuote($ColumnValue, $Data['Metadata'][$ColumnName]['TypeDesc']).", ";
+            //echo $QueryValues.PHP_EOL;
+            /*
+             * Now we proper scape
+            if (is_string($ColumnValue))
+            {
+                $QueryValues .= "'".$ColumnValue."', ";
+            }
+            if (is_numeric($ColumnValue))
+            {
+                $QueryValues .= $ColumnValue.", ";
+            }
+            if (is_null($ColumnValue))
+            {
+                $QueryValues .= "NULL, ";
+            }
+             */
+        }
+        //Second time we do not need the column names
+        if ($FirstTimePassed === FALSE)
+        {
+            $QueryMain = CloseCommaDelimitedList($QueryMain, ")");
+            $FirstTimePassed = TRUE;
+        }
+        //We close the values list and start a new one
+        $QueryValues = CloseCommaDelimitedList($QueryValues, ")").", (";
+    }
+    //Take out the last ", ("
+    $FinalQuery = $QueryMain." VALUES ".substr($QueryValues, 0, strlen($QueryValues)-3).";";
+    //echo 'Insert Query: '.$FinalQuery.PHP_EOL;
+    $Resultado = Insert($ConnectionIndex, $FinalQuery);
+    if ($Resultado === FALSE)
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+/**
+ * MergeFromMySQlAssocDataStructure merges the data form a MySQL ASSOC style array into a Table
+ * First key MUST be the Primary/Lookup Key
+ * @param array     $Data               The data to insert
+ * @param string    $TableName          The table to insert into
+ * @param array     $ConnectionIndex    The connection to use
+ * @return boolean  TRUE on success, FALSE on failure
+ * @since   0.0.7
+ * @see     https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html
+ * @todo convert to metadata-aware. First debug the quey building
+ */
+function MergeFromMySQlAssocDataStructure($Data, $TableName, $ConnectionIndex)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> MergeFromMySQlAssocDataStructure '.PHP_EOL;
+    }
+
+    //Might not be a MySQLAssoc Data Structure if we are called directly
+    if (!isset($Data['Data']))
+    {
+        return FALSE;
+    }
+    print_r($Data);
+    //Here we build and run the sentence over and over
+    $QueryMain = "INSERT INTO ".$TableName." (";
+    $QueryValues = "(";
+    $IAmFirstPKColumn = TRUE;
+    $UpdateColumns = "";
+    foreach ($Data['Data'] as $Key => $Value)
+    {
+        foreach ($Value AS $ColumnName => $ColumnValue)
+        {
+            $QueryMain .= $ColumnName.", ";
+            //echo $Key.'=>'.$ColumnName.'=>'.$ColumnValue.'==>'.$QueryMain.PHP_EOL;
+            /*if (is_string($ColumnValue))
+            {
+                $QueryValues .= "'".$ColumnValue."', ";
+            }
+            if (is_numeric($ColumnValue))
+            {
+                $QueryValues .= $ColumnValue."', ";
+            }
+            if (is_null($ColumnValue))
+            {
+                $QueryValues .= "NULL, ";
+            }*/
+            $QueryValues .= MySQLProperQuote($ColumnValue, $Data['Metadata'][$ColumnName]['TypeDesc']).", ";
+            if ($IAmFirstPKColumn === FALSE)
+            {
+                $UpdateColumns .= $ColumnName.' = '.MySQLProperQuote($ColumnValue, $Data['Metadata'][$ColumnName]['TypeDesc']).", ";
+            }
+            else
+            {
+                //I am the PK column. Unset the flag
+                $IAmFirstPKColumn = FALSE;
+            }
+        }
+        //End and run the sentence
+        $QueryMain = CloseCommaDelimitedList($QueryMain, ")");
+        //We close the values list and potentially updated columns list
+        $QueryValues = CloseCommaDelimitedList($QueryValues, ")");
+        $UpdateColumns = CloseCommaDelimitedList($UpdateColumns, "");
+        $FinalQuery = $QueryMain." VALUES ".$QueryValues."  ON DUPLICATE KEY UPDATE ".$UpdateColumns.";";
+        //Run it!!
+        $Resultado = Merge($ConnectionIndex, $FinalQuery);
+        if ($Resultado === FALSE)
+        {
+            return FALSE;
+        }
+        //Reset variables
+        $QueryMain = "INSERT INTO ".$TableName." (";
+        $QueryValues = "(";
+        $IAmFirstPKColumn = TRUE;
+        $UpdateColumns = "";
+    } //End for each record
+
+    return TRUE;
 }

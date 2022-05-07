@@ -57,9 +57,6 @@ $GLOBALS['LogicHeap'] = NULL;
 $GLOBALS['Loggers'] = NULL;
 //Combined helpers
 $GLOBALS['CombinedHelpers'] = NULL;
-//Error processing
-set_error_handler('CustomErrorProcessor');
-register_shutdown_function('FatalErrorProcessor');
 
 /*
  * Error handlers
@@ -271,6 +268,10 @@ function RegisterLogger($Channel, $Destination, $Helper, $Formatter, $Options = 
 
         exit(1);
     }
+
+    //Set the handlers for MINION Error Processing
+    set_error_handler('CustomErrorProcessor');
+    register_shutdown_function('FatalErrorProcessor');
 }
 
 /**
