@@ -264,7 +264,7 @@ else
  */
 echo PHP_EOL.'High-level cache read, full table. Fisrt time it gets it from DB'.PHP_EOL;
 $TestData = ReadCache('TestData', $Index6, 'ActorTestTable');
-print_r($TestData);
+print_r($TestData); var_dump($TestData);
 
 echo PHP_EOL.'High-level cache read, full table. Second time it gets it from APCU'.PHP_EOL;
 $TestData2 = ReadCache('TestData', $Index6, 'ActorTestTable');

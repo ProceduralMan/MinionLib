@@ -1,5 +1,10 @@
 # MinionLib Change Log
-## Version 0.0.7
+## Version 0.0.7.1 (2022-05-08)
+- Bug Fixes:
+  - ReadCache filters semicolons on the filter condition.
+  - ReadCache does not NOTICE and returns NULL when dealing with empty datasets
+  - TableToAssoc returns full structure
+## Version 0.0.7 (2022-05-07)
 - Improvements on functions documentation
 - Caching Functions
   - APCUDefaultsSetter sets the default config flags if APCU is running on the system

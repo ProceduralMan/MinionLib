@@ -2286,10 +2286,10 @@ function TableToAssoc(&$Data, $TableName, $ConnectionIndex, $FilterCondition = "
     }
 
     $Query = "SELECT * FROM ".$TableName." ".$FilterCondition." LIMIT ".$Offset.",".$NumRows;
-    $MySQLData = Read($ConnectionIndex, $Query, 'ASSOC');
-    if (is_array($MySQLData) === TRUE)
+    $Data = Read($ConnectionIndex, $Query, 'ASSOC');
+    if (is_array($Data) === TRUE)
     {
-        //echo '*** READ COUNT***'.count($MySQLData).PHP_EOL;
+        /*echo '*** READ COUNT***'.count($MySQLData).PHP_EOL;
         if (!empty($MySQLData['Data']))
         {
             //$Data = $MySQLData['Data'];
@@ -2299,10 +2299,11 @@ function TableToAssoc(&$Data, $TableName, $ConnectionIndex, $FilterCondition = "
         }
         else
         {
-            //Comes an empty resultset. Return NULL
+            //Comes an empty resultset. Return it
+            print_r($MySQLData);
             $Data = NULL;
         }
-
+        */
         return TRUE;
     }
     else

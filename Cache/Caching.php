@@ -137,7 +137,7 @@ function PersistCache($Key, $DBConnection, $DestinationTable,  $FullRewrite = FA
  * @param   string  $ArrayType              Wheter to use a numeric -NUMERIC- or associative -ASSOC- array for storing the data
  * @param   array   $ParametricKeys         A numeric array of column names used to persist numeric arrays into DB. Only needed of we use $Persistable = TRUE
  *                                              and $ArrayType = NUMERIC
- * @return  mixed   The data read, or FALSE on failure 
+ * @return  mixed   The data read, NULL on empty datasets or FALSE on failure 
  * @since   0.0.7
  * @see
  * @todo esta devolviendo conexiones... revisar
@@ -178,6 +178,11 @@ function ReadCache($Key, $FailOverConnection, $FailOverTable, $Persistable = FAL
                 {
                     echo date("Y-m-d H:i:s").' -> ReadCache -> Key not found / Data non cached'.PHP_EOL;
                 }
+                //Filter semicolons
+                if (!empty($FilterCondition))
+                {
+                    $FilterCondition = str_replace(";","",$FilterCondition);
+                }
                 //Non-successful. Read from table
                 if ($ArrayType === 'NUMERIC')
                 {
@@ -194,13 +199,14 @@ function ReadCache($Key, $FailOverConnection, $FailOverTable, $Persistable = FAL
 
                     return FALSE;
                 }
-                //If Data is null no need to cache it
-                if ($Data === NULL)
+                //If Dataset it's empty, no need to cache it
+                if ($Data['Rows'] === 0)
                 {
-                    $ErrorMessage = 'Reading an empty dataset from database.';
-                    ErrorLog($ErrorMessage, E_USER_NOTICE);
+                    //No need to raise NOTICE
+                    //$ErrorMessage = 'Reading an empty dataset from database.';
+                    //ErrorLog($ErrorMessage, E_USER_NOTICE);
 
-                    return FALSE;
+                    return NULL;
                 }
                 $StoreResult = Array2APCU($Data, $Key, $TimeToLive, $PersistInfo);
                 if ($StoreResult === FALSE)
