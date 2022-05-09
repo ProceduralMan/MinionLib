@@ -47,7 +47,7 @@ $DBPassword = '82CX39t3gOnf2BHOxPmE';
 		<p>Enjoy the ride!</p>
                 <h2> Testing APCU</h2>
                 <?php
-                if (MIL_ACPU !== TRUE)
+                if (MIL_APCU !== TRUE)
                 {
                     echo '<p>APCU not enabled</p>'.PHP_EOL;
                     echo '<p>End tests</p>'.PHP_EOL;
@@ -356,7 +356,7 @@ $DBPassword = '82CX39t3gOnf2BHOxPmE';
                     $TestData3['Data'][6]['first_name'] = 'JOHNNY';
                     $TestData3['Data'][6]['last_name'] = 'ME LAVO';
                     $TestData3['Data'][6]['last_update'] = '2022-02-15 22:22:22';
-                    $Result9 = Array2APCU($TestData3, 'TestDataP');
+                    $Result9 = MYSMAToAPCU($TestData3, 'TestDataP');
                     if (!$Result9)
                     {
                         echo '*** ERROR CACHEING***';

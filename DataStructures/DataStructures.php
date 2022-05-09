@@ -14,7 +14,7 @@
  */
 
 /**
- * AssocToMySQLAssoc Converts a regular assoc array to a MySQL Assoc Data Structure
+ * AssocToMYSMA Converts a regular assoc array to our MySQL Assoc Data Structure plus Metadata MYSMA structure
  * Sample ASSOC MySQl Structure
  * array(3) {
  *   ["Columns"]=>
@@ -57,15 +57,12 @@
  * @see     
  * @todo
  */
-function AssocToMySQLAssoc($Data, $TableName, $ConnectionIndex, $MeaningfulKey = FALSE)
+function AssocToMYSMA($Data, $TableName, $ConnectionIndex, $MeaningfulKey = FALSE)
 {
     if (DEBUGMODE)
     {
-        echo date("Y-m-d H:i:s").' -> AssocToMySQLAssoc '.PHP_EOL;
+        echo date("Y-m-d H:i:s").' -> AssocToMYSMA '.PHP_EOL;
     }
-
-    $MySQLAssoc = array();
-    $RowRecord = array();
 
     //If no data we return error
     if (empty($Data))
@@ -79,73 +76,136 @@ function AssocToMySQLAssoc($Data, $TableName, $ConnectionIndex, $MeaningfulKey =
         return FALSE;
     }
 
-    //Can we get the metadata?
+    //If it is already kosher we return success
+    if (IsMYSMADataStructure($Data) === TRUE)
+    {
+        return $Data;
+    }
+
+    //We will need meta-data for the following steps... can we get the metadata?
     if (is_null($TableName)||is_null($ConnectionIndex))
     {
         return FALSE;
     }
 
-    //If it is already kosher we return success
-    if (IsMySQLAssocDataStructure($Data) === FALSE)
+    $Metadata = GetMySQLTableMetadata($TableName, $ConnectionIndex);
+
+    //If it is a MySQL Assoc Data Structure we do the conversion
+    if (IsMySQLAssocDataStructure($Data) === TRUE)
     {
+        $Data['Metadata'] = $Metadata;
+
         return $Data;
     }
 
-    //If is a single assoc record we do the conversion
+    //Then either is a single assoc record or a multi-level numeric plus assoc like the one shown of the function header doc
     if (IsMultiArray($Data) === 1)
     {
-        if (IsAssocArray($Data) === FALSE)
-        {
-            return FALSE;
-        }
-        else
-        {
-            $Rows = 1;
-            $ColumnsCount = 0;
-            foreach ($Data as $Key => $Value)
-            {
-                $RowRecord[0][$Key] = $Value;
-                $ColumnsCount++;
-            }
-        }
+        return SingleAssocToMYSMA($Data, $Metadata);
     }
     else
     {
-        //print_r($Data);
-        //Must be a multiarray as we check prior to see that it is a proper array
-        $Metadata = GetMySQLTableMetadata($TableName, $ConnectionIndex);
-        //Might be a "standard" MySQL ASSOC Data Structure
-        if (isset($Data['Columns'], $Data['Rows'], $Data['Data']))
-        {
-            $Data['Metadata'] = $Metadata;
+        return MultiRecordNumericAssocToMYSMA($Data, $Metadata, $MeaningfulKey);
+    }
+}
 
-            return $Data;
-        }
-
-        //Plain NUMERIC+ASSOC array assumed -like the 'Data' part of a MySQL ASSOC Structure
-        $Rows = count($Data);
-        $Index = 0;
-        foreach ($Data as $RecordKey => $RecordValue)
-        {
-            $ColumnsCount = 0;
-            if ($MeaningfulKey !== FALSE)
-            {
-                $RowRecord[$Index][$MeaningfulKey] = $RecordKey;
-            }
-            foreach ($RecordValue as $Key => $Value)
-            {
-                $RowRecord[$Index][$Key] = $Value;
-                $ColumnsCount++;
-            }
-            $Index++;
-        }
+/**
+ * MultiRecordNumericAssocToMYSMA converts a multi-record numeric+assoc array to a MYSMA Structure
+ * @param   array $Data       The multi-record structure
+ * @param   array $Metadata   The associated table metadata
+ * @param   mixed   $MeaningfulKey      The key to use when the array has meaningful keys on the first dimension
+ * @return  array The MYSMA Data Structure
+ *   array(3) {
+ *     [0]=>
+ *     array(4) {
+ *       ["actor_id"]=>
+ *       string(1) "1"
+ *       ["first_name"]=>
+ *       string(8) "PENELOPE"
+ *       ["last_name"]=>
+ *       string(7) "GUINESS"
+ *       ["last_update"]=>
+ *       string(19) "2006-02-15 04:34:33"
+ *     }
+ *     [1]=>
+ *     array(4) {
+ *       ["actor_id"]=>
+ *       string(1) "2"
+ *       ["first_name"]=>
+ *       string(4) "NICK"
+ *       ["last_name"]=>
+ *       string(8) "WAHLBERG"
+ *       ["last_update"]=>
+ *       string(19) "2006-02-15 04:34:33"
+ *     }
+ *   }
+ * @since   0.0.8
+ * @see     
+ * @todo
+ */
+function MultiRecordNumericAssocToMYSMA($Data, $Metadata, $MeaningfulKey)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> MultiRecordNumericAssocToMYSMA '.PHP_EOL;
     }
 
+    $Rows = count($Data);
+    $Index = 0;
+    $RowRecord = array();
+    foreach ($Data as $RecordKey => $RecordValue)
+    {
+        $ColumnsCount = 0;
+        if ($MeaningfulKey !== FALSE)
+        {
+            $RowRecord[$Index][$MeaningfulKey] = $RecordKey;
+        }
+        foreach ($RecordValue as $Key => $Value)
+        {
+            $RowRecord[$Index][$Key] = $Value;
+            $ColumnsCount++;
+        }
+        $Index++;
+    }
     //We dump the value to a MySQL ASSOC Structure
-    $MySQLAssoc['Columns'] = $ColumnsCount;
-    $MySQLAssoc['Rows'] = $Rows;
-    $MySQLAssoc['Data'] = $RowRecord;
-    $MySQLAssoc['Metadata'] = $Metadata;
+    $MYSMA['Columns'] = $ColumnsCount;
+    $MYSMA['Rows'] = $Rows;
+    $MYSMA['Data'] = $RowRecord;
+    $MYSMA['Metadata'] = $Metadata;
 
-    return $MySQLAssoc;
+    return $MYSMA;
+}
+
+
+/**
+ * SingleAssocToMYSMA converts a single ASSOC record to a MYSMA Structure
+ * @param   array $Data       The ASSOC record
+ * @param   array $Metadata   The associated table metadata
+ * @return  array The MYSMA Data Structure
+ * @since   0.0.8
+ * @see     
+ * @todo
+ */
+function SingleAssocToMYSMA($Data, $Metadata)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> SingleAssocToMYSMA '.PHP_EOL;
+    }
+
+    $Rows = 1;
+    $ColumnsCount = 0;
+    $RowRecord = array();
+    foreach ($Data as $Key => $Value)
+    {
+        $RowRecord[0][$Key] = $Value;
+        $ColumnsCount++;
+    }
+    //We dump the value to a MySQL ASSOC Structure
+    $MYSMA['Columns'] = $ColumnsCount;
+    $MYSMA['Rows'] = $Rows;
+    $MYSMA['Data'] = $RowRecord;
+    $MYSMA['Metadata'] = $Metadata;
+
+    return $MYSMA;
 }

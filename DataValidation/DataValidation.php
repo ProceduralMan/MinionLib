@@ -811,9 +811,9 @@ function IsMultiArray(&$Data)
 }
 
 /**
- * IsMySQLAssocDataStructure checks if the array has the structure of a MySQL ASSOC Data Structure -plus Metadata-
+ * IsMySQLAssocDataStructure checks if the array has the structure of a MySQL ASSOC Data Structure -no Metadata-
  * @param   array   $Data The array to check
- * @return  mixed   FALSE if it is not an array, 1 for unidimensional arrays and 2 for multidimensional arrays
+ * @return  boolean TRUE if it is, FALSE if it is not
  * @since   0.0.7
  * @see     
  * @todo
@@ -825,6 +825,39 @@ function IsMySQLAssocDataStructure(&$Data)
         echo date("Y-m-d H:i:s").' -> IsMySQLAssocDataStructure '.PHP_EOL;
     }
 
+    //Must have the necessary structure
+    if ((isset($Data['Columns']) === FALSE)||(isset($Data['Rows']) === FALSE)||(isset($Data['Data']) === FALSE))
+    {
+        return FALSE;
+    }
+    else
+    {
+        //But not the metadata!
+        if (isset($Data['Metadata']) === TRUE)
+        {
+            return FALSE;
+        }
+        else
+        {
+            return TRUE;
+        }
+    }
+}
+
+/**
+ * IsMYSMADataStructure checks if the array has the structure of a MySQL ASSOC Data Structure -plus Metadata-
+ * @param   array   $Data The array to check
+ * @return  mixed   FALSE if it is not an array, 1 for unidimensional arrays and 2 for multidimensional arrays
+ * @since   0.0.8
+ * @see     
+ * @todo
+ */
+function IsMYSMADataStructure(&$Data)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsMySQLAssocDataStructure '.PHP_EOL;
+    }
     if ((isset($Data['Columns']) === FALSE)||(isset($Data['Rows']) === FALSE)||(isset($Data['Metadata']) === FALSE)||(isset($Data['Data']) === FALSE))
     {
         return FALSE;

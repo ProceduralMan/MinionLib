@@ -31,14 +31,14 @@ function APCUDefaultsSetter()
     if (function_exists('apcu_cache_info') === FALSE)
     {
         //ACPU disabled flag
-        Defaults("MIL_ACPU", FALSE);
+        Defaults("MIL_APCU", FALSE);
         $ErrorMessage = "No cache info available.  APCU does not appear to be running.";
         ErrorLog($ErrorMessage, E_USER_NOTICE);
     }
     else
     {
         //ACPU enabled flag
-        Defaults("MIL_ACPU", TRUE);
+        Defaults("MIL_APCU", TRUE);
     }
 }
 
@@ -273,16 +273,8 @@ function APCUStatus()
 }
 
 /**
- * APCU2Array returns data from APCU cache
- * APCU Stored array has a special structure
- * array(2) {
- *   ["LastDBWrite"]=>
- *   int(1650610696)
- *   ["Data"]=>
- *   array(xx) {...
- *   }
- * }
- * So we get only 'Data'
+ * APCUToMYSMA returns data from APCU cache
+ * APCU Stored array has a special MYSMA structure
  * 
  * @param   string  $Key            The key under which the data is stored at the cache
  * @param   array   $Data           The var to load data into
@@ -292,20 +284,20 @@ function APCUStatus()
  * @see
  * @todo 
  */
-function APCU2Array($Key, &$Data)
+function APCUToMYSMA($Key, &$Data)
 {
     if (DEBUGMODE)
     {
-        echo date("Y-m-d H:i:s").' -> APCU2Array '.PHP_EOL;
+        echo date("Y-m-d H:i:s").' -> APCUToMYSMA '.PHP_EOL;
     }
 
     $FetchSuccess = FALSE;
     $Data = apcu_fetch($Key, $FetchSuccess);
     if ($FetchSuccess === FALSE)
     {
-        //Error getting the data
-        $ErrorMessage = "Error getting the data for key ".$Key;
-        ErrorLog($ErrorMessage, E_USER_NOTICE);
+        //Error getting the data. But it is business-as-usual on new caches so let it decide upstairs
+        //$ErrorMessage = "Error getting the data for key ".$Key;
+        //ErrorLog($ErrorMessage, E_USER_NOTICE);
         //echo '->fetch error';
 
         return FALSE;
@@ -316,7 +308,7 @@ function APCU2Array($Key, &$Data)
 }
 
 /**
- * Array2APCU writes data to APCU cache
+ * MYSMAToAPCU writes data to APCU cache
  * Does not check if returned data is an array, so it can be anything
  * But, if $Persistable is TRUE the array must be associative or it will fail
  * @param   array   $Data           The data to cache
@@ -327,31 +319,25 @@ function APCU2Array($Key, &$Data)
  *                      'TableName'         The table to persist to
  *                      'ConnectionIndex'   The connection to use
  *                      'FullRewrite'       The flag that marks if we should rewrite the table with the cache data
- *                      'ParametricKeys'    The array of paremtric keys for numeric arrays... if is set, logic will assume the array is numerioc
  * @return  boolean TRUE on success, FALSE on failure
  * @return  mixed   $Data by reference
  * @since 0.0.7
  * @see
  * @todo
  */
-function Array2APCU($Data, $Key, $TimeToLive = 0, $PersistInfo = NULL)
+function MYSMAToAPCU(&$Data, $Key, $TimeToLive = 0, $PersistInfo = NULL)
 {
     if (DEBUGMODE)
     {
-        echo date("Y-m-d H:i:s").' -> Array2APCU '.'*** ARRAY COUNT***'.count($Data).PHP_EOL;
+        echo date("Y-m-d H:i:s").' -> MYSMAToAPCU '.PHP_EOL;
     }
     //print_r($Data);
     $WriteToDB = FALSE;
     if ((isset($PersistInfo['Persistable']))&&($PersistInfo['Persistable'] === TRUE))
     {
-        //Get the data
+        //Get the time data
         $LastDBWrite = APCULastDBWrite($Key);
-        if ($LastDBWrite === FALSE)
-        {
-            //Error getting APCU info / first time trying
-            $LastDBWrite = strtotime('2022-01-27'); //MinionLib 0.0.1 launched on this date... in any case longer ago than MIL_ACPUPERSISTLAPSE lapse
-        }
-        if (MRLapse($LastDBWrite, 'S')>MIL_ACPUPERSISTLAPSE)
+        if (MRLapse($LastDBWrite, 'S')>MIL_APCUPERSISTLAPSE)
         {
             $WriteToDB = TRUE;
             $Data['LastDBWrite'] = time();
@@ -363,7 +349,11 @@ function Array2APCU($Data, $Key, $TimeToLive = 0, $PersistInfo = NULL)
     }
     else
     {
-        $Data['LastDBWrite'] = '***VOLATILE CACHE***';
+        //If there is no previous DBWrite Info we generate a 'VOLATILE' TAG
+        if (isset($Data['LastDBWrite']) === FALSE)
+        {
+            $Data['LastDBWrite'] = '***VOLATILE CACHE***';
+        }
     }
     //$TempData['Data'] = $Data;
     //echo '*** DATA COUNT***'.count($TempData['Data']).PHP_EOL;
@@ -371,22 +361,36 @@ function Array2APCU($Data, $Key, $TimeToLive = 0, $PersistInfo = NULL)
     $Result = apcu_store($Key, $Data, $TimeToLive);
     if ($Result === FALSE)
     {
-        $Message = 'Error registering connection over APCU';
+        $Message = 'Error caching data over APCU';
         ErrorLog($Message, E_USER_ERROR);
 
         return FALSE;
     }
+    //print_r($Data);
     //Write to DB if necessary
     if ($WriteToDB === TRUE)
     {
-        //If it is numeric
-        if (isset($PersistInfo['ParametricKeys']))
+        if (IsMYSMADataStructure($Data))
         {
-            NumericToTable($Data, $PersistInfo['TableName'], $PersistInfo['ConnectionIndex'], $PersistInfo['ParametricKeys'], $PersistInfo['FullRewrite']);
+            $Result2 = MYSMAToTable($Data, $PersistInfo['TableName'], $PersistInfo['ConnectionIndex'], $PersistInfo['FullRewrite']);
+        }
+        elseif (IsMySQLAssocDataStructure($Data))
+        {
+            $Result2 = AssocToTable($Data, $PersistInfo['TableName'], $PersistInfo['ConnectionIndex'], $PersistInfo['FullRewrite']);
         }
         else
         {
-            AssocToTable($Data, $PersistInfo['TableName'], $PersistInfo['ConnectionIndex'], $PersistInfo['FullRewrite']);
+            $Message = 'Not a MYSMA Data Structure / MySQL Resultset';
+            ErrorLog($Message, E_USER_ERROR);
+
+            return FALSE;
+        }
+        if ($Result2 === FALSE)
+        {
+            $Message = 'Error persisting data to DB';
+            ErrorLog($Message, E_USER_ERROR);
+
+            return FALSE;
         }
     }
 
@@ -401,7 +405,7 @@ function Array2APCU($Data, $Key, $TimeToLive = 0, $PersistInfo = NULL)
 function APCULastDBWrite($Key)
 {
     //Beggining time
-    $FirstWrite = strtotime('2022-01-27'); //MinionLib 0.0.1 launched on this date... in any case longer ago than MIL_ACPUPERSISTLAPSE lapse
+    $FirstWrite = strtotime('2022-01-27'); //MinionLib 0.0.1 launched on this date... in any case longer ago than MIL_APCUPERSISTLAPSE lapse
 
     if (DEBUGMODE)
     {
@@ -412,11 +416,11 @@ function APCULastDBWrite($Key)
     $Data = apcu_fetch($Key, $FetchSuccess);
     if ($FetchSuccess === FALSE)
     {
-        //Error getting the data
-        $ErrorMessage = "Error getting the data for key ".$Key;
-        ErrorLog($ErrorMessage, E_USER_NOTICE);
+        //Error getting the data. Can be a yet non-cached array so business as usual. No NOTICE
+        //$ErrorMessage = "Error getting the data for key ".$Key;
+        //ErrorLog($ErrorMessage, E_USER_NOTICE);
 
-        return FALSE;
+        return $FirstWrite;
     }
     if (!isset($Data['LastDBWrite']))
     {

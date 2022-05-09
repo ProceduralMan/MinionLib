@@ -1,9 +1,30 @@
 # MinionLib Change Log
+## Version 0.0.8 (2022-05-09)
+- Bug Fixes:
+  - APCU2Array does not NOTICE on cache misses
+  - ReadCache returns full structure on empty datasets
+- Refactoring:
+  - APCU2Array renamed to APCUToMYSMA
+  - Array2APCU renamed to MYSMAToAPCU. Now, it just deals with metada-aware structures.
+  - AssocToMySQLAssoc renamed to AssocToMYSMA
+  - InsertFromMySQLDataStructure renamed to InsertFromMYSMADataStructure
+  - IsMySQLAssocDataStructure falls back to testing 'Pure' MySQL Assoc Data Structure
+  - MergeFromMySQLDataStructure renamed to MergeFromMYSMADataStructure
+  - PersistCache now expects MYSMA structures
+- Data Structure Functions:
+  - MultiRecordNumericAssocToMYSMA converts a multi-record numeric+assoc array to a MYSMA Structure
+  - SingleAssocToMYSMA converts a single ASSOC record to a MYSMA Structure
+- Data Validation Functions:
+  - IsMYSMADataStructure checks for the metadata-aware MySQL Assoc Data Structura that we use internally
+- SQLDB Functions
+  - MYSMAToTable writes a MYSMA Structure to database
+
 ## Version 0.0.7.1 (2022-05-08)
 - Bug Fixes:
   - ReadCache filters semicolons on the filter condition.
   - ReadCache does not NOTICE and returns NULL when dealing with empty datasets
   - TableToAssoc returns full structure
+
 ## Version 0.0.7 (2022-05-07)
 - Improvements on functions documentation
 - Caching Functions
@@ -42,7 +63,6 @@
   - Truncate empties a table
 - Text and String Functions
   - CloseCommaDelimitedList takes the last comma from the list and adds a closure char/string
-
 
 ## Version 0.0.6 (2022-04-18)
 - Bug Fixes:

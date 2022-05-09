@@ -19,7 +19,7 @@ phpinfo();
         <p>Hi! I am a bare html webpage hastily set-up to test MinionLib Database primitives with APCU support</p>
         <p>Enjoy the ride!</p>
                 <?php echo '<h2> Testing APCU</h2>'.PHP_EOL;
-                if (MIL_ACPU === TRUE)
+                if (MIL_APCU === TRUE)
                 {
                     echo '<p>APCU enabled</p>'.PHP_EOL;
                 }

@@ -264,23 +264,34 @@ else
  */
 echo PHP_EOL.'High-level cache read, full table. Fisrt time it gets it from DB'.PHP_EOL;
 $TestData = ReadCache('TestData', $Index6, 'ActorTestTable');
-print_r($TestData); var_dump($TestData);
+echo 'TEST DATA'.PHP_EOL;
+print_r($TestData); //var_dump($TestData);
 
 echo PHP_EOL.'High-level cache read, full table. Second time it gets it from APCU'.PHP_EOL;
 $TestData2 = ReadCache('TestData', $Index6, 'ActorTestTable');
+echo 'TEST DATA 2'.PHP_EOL;
 print_r($TestData2);
 
 echo PHP_EOL.'Now, with a persistable cache data'.PHP_EOL;
 $TimeToLive = 0; //Live forever... in a CLI case until the script finishes, I am afraid
 $TestData3 = ReadCache('TestDataP', $Index6, 'ActorTestTable', TRUE, $TimeToLive, 'APCU');
-print_r($TestData3);
+echo 'TEST DATA 3'.PHP_EOL;
+print_r($TestData3); //var_dump($TestData);
 
 echo 'Add a row to the array and force-persist the cache, updating (no FULL-REWRITE)'.PHP_EOL;
-$TestData3['Data'][6]['actor_id'] = 7;
-$TestData3['Data'][6]['first_name'] = 'JOHNNY';
-$TestData3['Data'][6]['last_name'] = 'ME LAVO';
-$TestData3['Data'][6]['last_update'] = '2022-02-15 22:22:22';
-$Result9 = Array2APCU($TestData3, 'TestDataP');
+if ($TestData3['Rows'] === 0)
+{
+    $TheRow = 0;
+}
+else
+{
+    $TheRow = count($TestData3['Data']);
+}
+$TestData3['Data'][$TheRow]['actor_id'] = 7;
+$TestData3['Data'][$TheRow]['first_name'] = 'JOHNNY';
+$TestData3['Data'][$TheRow]['last_name'] = 'ME LAVO';
+$TestData3['Data'][$TheRow]['last_update'] = '2022-02-15 22:22:22';
+$Result9 = MYSMAToAPCU($TestData3, 'TestDataP');
 if (!$Result9)
 {
     echo '*** ERROR CACHEING***';

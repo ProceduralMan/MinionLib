@@ -17,47 +17,31 @@ require_once 'APCU.php';
 /**
  * PersistCache
  * Reads from cache and stores in table using Array2Table (SQLDB)
- * Valid when whole tables are cached (auxiliary tables, counter tables and the like
+ * Expects MYSMA structures
  * @param   string  $Key                The cache key under which the data is stored
  * @param   array   $DBConnection       Connection index to use when reading from database
  * @param   string  $DestinationTable   Table to query if cache reading fails
  * @param   boolean $FullRewrite        TRUE if the table is to be deleted and rewritten with the array info, false otherwise
- * @param   array   $ColumnNames        The array of column names to use on NUMERIC arrays. First column *MUST* be the PK!
+ * @param   int     $TimeToLive         The time for the cache to live
  * @param   string  $CacheType          The cache type, either APCU or REDIS by now
- * @param   string  $ArrayType          Wheter to use a numeric -NUMERIC- or associative -ASSOC- array for storing the data
  * @return  boolean TRUE if persisted successfully, FALSE otherwise
  * @since   0.0.7
  * @see
  * @todo
  */
-function PersistCache($Key, $DBConnection, $DestinationTable,  $FullRewrite = FALSE, $ColumnNames = NULL, $CacheType = 'APCU',$ArrayType = 'ASSOC')
+function PersistCache($Key, $DBConnection, $DestinationTable,  $FullRewrite = FALSE, $TimeToLive = 0, $CacheType = 'APCU')
 {
     if (DEBUGMODE)
     {
         echo date("Y-m-d H:i:s").' -> PersistCache '.PHP_EOL;
     }
 
-    //Numeric arrays MUST include $ColumnNames
-    if ($ArrayType === 'NUMERIC')
-    {
-        if (IsNumericArray($ColumnNames) === FALSE)
-        {
-            return FALSE;
-        }
-    }
-    elseif ($ArrayType !== 'ASSOC')
-    {
-        //Only ASSOC and NUMERIC array types allowed
-        return FALSE;
-    }
-
     $Data = array();
-    $MySQLData = array();
     switch ($CacheType)
     {
         case 'APCU':
             //Read from Cache
-            $Result = APCU2Array($Key, $Data);
+            $Result = APCUToMYSMA($Key, $Data);
             if ($Result === FALSE)
             {
                 $ErrorMessage = 'Unable to read from cache. Key: '.$Key;
@@ -65,6 +49,7 @@ function PersistCache($Key, $DBConnection, $DestinationTable,  $FullRewrite = FA
 
                 return FALSE;
             }
+            //print_r($Data);
 
             //Is data an array?
             if (is_array($Data === FALSE))
@@ -72,38 +57,33 @@ function PersistCache($Key, $DBConnection, $DestinationTable,  $FullRewrite = FA
                 return FALSE;
             }
 
-            /*Convert to MySQL Data Structure
-            if ($ArrayType === 'ASSOC')
+            //Is it a proper Metadata-aware MYSAM structure?
+            if (IsMYSMADataStructure($Data) === FALSE)
             {
-                //Convert Array to MySQL Data Structure 
-                $MySQLData = AssocToMySQLAssoc($Data, FALSE);
-                if ($MySQLData === FALSE)
-                {
-                    return FALSE;
-                }
-            }*/
+                //echo '***DOES NOT HAVE PROPER STRUCTURE***';
+                $ErrorMessage = 'Data to cache does not have proper structure. Key: '.$Key;
+                ErrorLog($ErrorMessage, E_USER_ERROR);
 
-            //Is it a proper Metadata-aware structure?
-            if (IsMySQLAssocDataStructure($Data) === FALSE)
-            {
                 return FALSE;
             }
 
             //Now to persist the data
-            if ($ArrayType === 'ASSOC')
+            //Store in DB
+            $StoreResult = MYSMAToTable($Data, $DestinationTable, $DBConnection, $FullRewrite);
+            if ($StoreResult === FALSE)
             {
-                //Store in DB
-                $StoreResult = AssocToTable($Data, $DestinationTable, $DBConnection, $FullRewrite);
-                if ($StoreResult === FALSE)
-                {
-                    $ErrorMessage = 'Unable to perform cache reads and writes. Is it functional?';
-                    ErrorLog($ErrorMessage, E_USER_ERROR);
-                }
+                $ErrorMessage = 'Unable to perform cache reads and writes. Is it functional?';
+                ErrorLog($ErrorMessage, E_USER_ERROR);
             }
-            else
+            //Now flag it as persitable if it is not
+            $Data['LastDBWrite'] = time();
+            $CacheResult = apcu_store($Key, $Data, $TimeToLive);
+            if ($CacheResult === FALSE)
             {
-                //Store in DB
-                NumericToTable($Data, $DestinationTable, $DBConnection, $ColumnNames, $FullRewrite);
+                $Message = 'Error caching data over APCU';
+                ErrorLog($Message, E_USER_ERROR);
+
+                return FALSE;
             }
 
             break;
@@ -125,8 +105,8 @@ function PersistCache($Key, $DBConnection, $DestinationTable,  $FullRewrite = FA
 
 /**
  * ReadCache
- * tries Cache first and if not reads from table and stores in cache
- * Valid when whole tables are cached -auxiliary tables, counter tables and the like-
+ * Tries Cache first and if not reads from table and stores in cache
+ * If the lapse between now and the last time it was persisted exceeds MIL_APCUPERSISTLAPSE -defined on MinionSetup.php- it writes it to DB
  * @param   string  $Key                    The cache key under which the data is stored
  * @param   array   $FailOverConnection     Connection index to use when reading from database
  * @param   string  $FailOverTable          Table to query if cache reading fails
@@ -134,16 +114,14 @@ function PersistCache($Key, $DBConnection, $DestinationTable,  $FullRewrite = FA
  * @param   int     $TimeToLive             The time for the cache to live
  * @param   string  $CacheType              The cache type, either APCU or REDIS by now
  * @param   mixed   $FilterCondition        The condition for constraining the selection. If ommited, all the table is selected -thus replaced when cached-
- * @param   string  $ArrayType              Wheter to use a numeric -NUMERIC- or associative -ASSOC- array for storing the data
- * @param   array   $ParametricKeys         A numeric array of column names used to persist numeric arrays into DB. Only needed of we use $Persistable = TRUE
- *                                              and $ArrayType = NUMERIC
+ * disabled param   string  $ArrayType              Wheter to use a numeric -NUMERIC- or associative -ASSOC- array for storing the data
+ *                                              and $ArrayType = NUMERIC => For the time
  * @return  mixed   The data read, NULL on empty datasets or FALSE on failure 
  * @since   0.0.7
  * @see
  * @todo esta devolviendo conexiones... revisar
  */
-function ReadCache($Key, $FailOverConnection, $FailOverTable, $Persistable = FALSE, $TimeToLive = 0, $CacheType = 'APCU', $FilterCondition = "", $ArrayType = 'ASSOC',
-        $ParametricKeys = NULL)
+function ReadCache($Key, $FailOverConnection, $FailOverTable, $Persistable = FALSE, $TimeToLive = 0, $CacheType = 'APCU', $FilterCondition = "")
 {
     if (DEBUGMODE)
     {
@@ -162,16 +140,12 @@ function ReadCache($Key, $FailOverConnection, $FailOverTable, $Persistable = FAL
     {
         $PersistInfo['FullRewrite'] = FALSE;
     }
-    if (is_null($ParametricKeys) === FALSE)
-    {
-        $PersistInfo['ParametricKeys'] = $ParametricKeys;
-    }
 
     switch ($CacheType)
     {
         case 'APCU':
             //Try Cache first
-            $Result = APCU2Array($Key, $Data);
+            $Result = APCUToMYSMA($Key, $Data);
             if ($Result === FALSE)
             {
                 if (DEBUGMODE)
@@ -184,14 +158,7 @@ function ReadCache($Key, $FailOverConnection, $FailOverTable, $Persistable = FAL
                     $FilterCondition = str_replace(";","",$FilterCondition);
                 }
                 //Non-successful. Read from table
-                if ($ArrayType === 'NUMERIC')
-                {
-                    $DBResult = TableToArray($Data, $FailOverTable, $FailOverConnection, $FilterCondition);
-                }
-                else
-                {
-                    $DBResult = TableToAssoc($Data, $FailOverTable, $FailOverConnection, $FilterCondition);
-                }
+                $DBResult = TableToMYSMA($Data, $FailOverTable, $FailOverConnection, $FilterCondition);
                 if ($DBResult === FALSE)
                 {
                     $ErrorMessage = 'Unable to read from cache and unable to read from database.';
@@ -199,23 +166,17 @@ function ReadCache($Key, $FailOverConnection, $FailOverTable, $Persistable = FAL
 
                     return FALSE;
                 }
-                //If Dataset it's empty, no need to cache it
-                if ($Data['Rows'] === 0)
-                {
-                    //No need to raise NOTICE
-                    //$ErrorMessage = 'Reading an empty dataset from database.';
-                    //ErrorLog($ErrorMessage, E_USER_NOTICE);
-
-                    return NULL;
-                }
-                $StoreResult = Array2APCU($Data, $Key, $TimeToLive, $PersistInfo);
+                //We cache even empty datasets, as a way to 'initialice' the cache structure
+                $StoreResult = MYSMAToAPCU($Data, $Key, $TimeToLive, $PersistInfo);
                 if ($StoreResult === FALSE)
                 {
                     $ErrorMessage = 'Unable to perform cache reads and writes. Is it functional?';
                     ErrorLog($ErrorMessage, E_USER_ERROR);
-                }
-            }
 
+                    return FALSE;
+                }
+            } //End first-time caching
+            //We always end returning the structure... it is down below the switch
             break;
         case 'REDIS':
             $ErrorMessage = 'Unimplemented cache system. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it';

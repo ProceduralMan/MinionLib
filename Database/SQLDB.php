@@ -205,164 +205,6 @@ function RegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $
     }
 }
 
- /**
-  * OldRegisterMySQLConnection
-  * Front-end function to register a connection to MySQL.
-  * When used on web pages it should be caled just once at session creation.
-  * The function RegisterDBSystem includes safety mechanisms to avoid create multiple sibling pools on concurrent usage
-  * @since 0.0.3
-  * @see
-  * @todo
-  * @deprecated  will be substituted by an atomic variant
-  * @param mixed $ServerName
-  * @param mixed $Database
-  * @param mixed $DBUser
-  * @param mixed $DBPassword
-  * @param mixed $Persistent
-  * @param null|mixed $ConnectionTimeout
-  * @param null|mixed $CommandTimeout
-  * @param null|mixed $UseLocalInfile
-  * @param null|mixed $InitCommand
-  * @param null|mixed $Charset
-  * @param null|mixed $OptionsFile
-  * @param null|mixed $DefaultGroup
-  * @param null|mixed $ServerPublicKey
-  * @param null|mixed $CompressionProtocol
-  * @param null|mixed $FoundRows
-  * @param null|mixed $IgnoreSpaces
-  * @param null|mixed $InteractiveClient
-  * @param null|mixed $UseSSL
-  * @param null|mixed $DoNotVerifyServerCert
-  * @param null|mixed $Port
-  * @param null|mixed $Socket
-  */
-function OldRegisterMySQLConnection($ServerName, $Database, $DBUser, $DBPassword, $Persistent = FALSE, $ConnectionTimeout = NULL,
-    $CommandTimeout = NULL, $UseLocalInfile = NULL, $InitCommand = NULL, $Charset = NULL, $OptionsFile = NULL, $DefaultGroup = NULL, $ServerPublicKey = NULL,
-    $CompressionProtocol = NULL, $FoundRows = NULL, $IgnoreSpaces = NULL, $InteractiveClient = NULL, $UseSSL = NULL, $DoNotVerifyServerCert = NULL,
-    $Port = NULL, $Socket = NULL)
-{
-    if (DEBUGMODE)
-    {
-        echo date("Y-m-d H:i:s").' -> RegisterMySQLConnection '.PHP_EOL;
-    }
-
-    //Prepare compulsory Data
-    $InData['System'] = MIL_MYSQL;
-    $InData['ServerName'] = $ServerName;
-    $InData['Database'] = $Database;
-    $InData['DBUser'] = $DBUser;
-    $InData['DBPassword'] = $DBPassword;
-    $InData['Options']['Persistent'] = $Persistent;
-
-    //Prepare optional Data
-    if (!is_null($ConnectionTimeout))
-    {
-        $InData['Options']['ConnectionTimeout'] = $ConnectionTimeout;
-    }
-    if (!is_null($CommandTimeout))
-    {
-        $InData['Options']['CommandTimeout'] = $CommandTimeout;
-    }
-    if (!is_null($UseLocalInfile))
-    {
-        $InData['Options']['UseLocalInfile'] = $UseLocalInfile;
-    }
-    if (!is_null($InitCommand))
-    {
-        $InData['Options']['InitCommand'] = $InitCommand;
-    }
-    if (!is_null($Charset))
-    {
-        $InData['Options']['Charset'] = $Charset;
-    }
-    if (!is_null($OptionsFile))
-    {
-        $InData['Options']['OptionsFile'] = $OptionsFile;
-    }
-    if (!is_null($DefaultGroup))
-    {
-        $InData['Options']['DefaultGroup'] = $DefaultGroup;
-    }
-    if (!is_null($ServerPublicKey))
-    {
-        $InData['Options']['ServerPublicKey'] = $ServerPublicKey;
-    }
-    if (!is_null($CompressionProtocol))
-    {
-        $InData['Options']['CompressionProtocol'] = $CompressionProtocol;
-    }
-    if (!is_null($FoundRows))
-    {
-        $InData['Options']['FoundRows'] = $FoundRows;
-    }
-    if (!is_null($IgnoreSpaces))
-    {
-        $InData['Options']['IgnoreSpaces'] = $IgnoreSpaces;
-    }
-    if (!is_null($InteractiveClient))
-    {
-        $InData['Options']['InteractiveClient'] = $InteractiveClient;
-    }
-    if (!is_null($UseSSL))
-    {
-        $InData['Options']['UseSSL'] = $UseSSL;
-    }
-    if (!is_null($DoNotVerifyServerCert))
-    {
-        $InData['Options']['DoNotVerifyServerCert'] = $DoNotVerifyServerCert;
-    }
-    if (!is_null($Port))
-    {
-        $InData['Options']['Port'] = $Port;
-    }
-    if (!is_null($Socket))
-    {
-        $InData['Options']['Socket'] = $Socket;
-    }
-    $OutData = array();
-    $Result = DBSystemSanityCheck($InData, $OutData);
-    if ($Result === FALSE)
-    {
-        $ErrorMessage = 'Error checking MySQL connection: '.$OutData['ReturnValue'];
-        echo $ErrorMessage.PHP_EOL;
-        ErrorLog($ErrorMessage, E_USER_ERROR);
-
-        return FALSE;
-    }
-    else
-    {
-        //If there is a pool defined, we persist the pool info using APCU (REDIS to come)
-        if (is_int(MIL_POOLEDCONNECTIONS))
-        {
-            if (MIL_ACPU === TRUE)
-            {
-                $RegisterResult = RegisterDBSystem($InData, $OutData);
-                if ($RegisterResult === FALSE)
-                {
-                    $ErrorMessage = 'Error registering MySQL connection: '.$OutData['ReturnValue'];
-                    echo $ErrorMessage.PHP_EOL;
-                    ErrorLog($ErrorMessage, E_USER_ERROR);
-
-                    return FALSE;
-                }
-                else
-                {
-                    return $RegisterResult;
-                }
-            }   //There is ACPU present
-            else
-            {
-                //NO APCU... no pool
-                $ErrorMessage = 'No persistence layer to keep the pool on. Please setup APCU and enable MIL_ACPU on MinionSetup.php';
-                echo $ErrorMessage.PHP_EOL;
-                ErrorLog($ErrorMessage, E_USER_ERROR);
-
-                return FALSE;
-            }   //There isn't ACPU present
-        }   //There is a pool size defined
-    }   //Connection sanity check OK
-}
-
 /**
  * DBSystemSanityCheck checks that all needed configuration is in place. Just formal checking, no pre-connection
  * @param array $InData
@@ -1323,7 +1165,7 @@ function RegisterDBSystem($InData, $OutData)
     }
 
     //IF APCU is available we cache register on it
-    if (MIL_ACPU === TRUE)
+    if (MIL_APCU === TRUE)
     {
         $Resultado = apcu_store('DB', $GLOBALS['DB']);
         if ($Resultado === FALSE)
@@ -1340,113 +1182,6 @@ function RegisterDBSystem($InData, $OutData)
     $OutData['ReturnValue'] = $ConnectionName;
 
     return $ConnectionName;
-}
-
-/**
- * OldRegisterDBSystem registers a DB Connection.
- * It indexes the connection under the database name
- * @param mixed $InData
- * @param mixed $OutData
- * @return int     The connection index
- * @since 0.0.3
- * @see
- * @todo new parameter might arise from yet unimplemented systems
- * @deprecated  will be substituted by an atomic variant
- */
-function OldRegisterDBSystem($InData, $OutData)
-{
-    if (DEBUGMODE)
-    {
-        echo date("Y-m-d H:i:s").' -> RegisterDBSystem '.PHP_EOL;
-    }
-
-    //If we support APCU, update APCU KEY
-    //If there is a pool defined, we persist the pool info using APCU (REDIS to come)
-    if (is_int(MIL_POOLEDCONNECTIONS))
-    {
-        if (MIL_ACPU === TRUE)
-        {
-            $PoolExists = TestExistingPool($InData, $OutData);
-            if ($PoolExists === FALSE)
-            {
-                //No previous connection or no similar connection
-                //Register as GLOBAL
-                $ConnectionName = uniqid();
-                $GLOBALS['DB'][$ConnectionName]['System'] = $InData['System'];
-                $GLOBALS['DB'][$ConnectionName]['ServerName'] = $InData['ServerName'];
-                $GLOBALS['DB'][$ConnectionName]['Database'] = $InData['Database'];
-                $GLOBALS['DB'][$ConnectionName]['DBUser'] = $InData['DBUser'];
-                $GLOBALS['DB'][$ConnectionName]['DBPassword'] = $InData['DBPassword'];
-                if (isset($InData['ConnectionLink']))
-                {
-                    $GLOBALS['DB'][$ConnectionName]['ConnectionLink'] = $InData['ConnectionLink'];
-                    //Test serialization/APCU issue
-                    $GLOBALS['ConnLink'][0] = $InData['ConnectionLink'];
-                    apcu_store('ConnLink', $InData['ConnectionLink']);
-                }
-                if (isset($InData['Options']))
-                {
-                    $GLOBALS['DB'][$ConnectionName]['Options'] = $InData['Options'];
-                }
-                for ($i = 0; $i<MIL_POOLEDCONNECTIONS; $i++)
-                {
-                    $ThePool[$ConnectionName][$i] = $GLOBALS['DB'][$ConnectionName];
-                }
-                $Resultado = apcu_store('DB', $ThePool);
-                if ($Resultado === FALSE)
-                {
-                    $Message = 'Error registering connection over APCU';
-                    AddError($Message);
-                }
-                $OutData['Success'] = TRUE;
-                $OutData['ReturnValue'] = $ConnectionName;
-
-                return $ConnectionName;
-            }   //End No previous connection or no similar connection
-            else
-            {
-                $OutData['Success'] = TRUE;
-                $OutData['ReturnValue'] = $PoolExists;
-
-                return $PoolExists;
-            }
-        }
-    }
-    else
-    {
-        //No pool defined
-        //Register as GLOBAL
-        $ConnectionName = uniqid();
-        $GLOBALS['DB'][$ConnectionName]['System'] = $InData['System'];
-        $GLOBALS['DB'][$ConnectionName]['ServerName'] = $InData['ServerName'];
-        $GLOBALS['DB'][$ConnectionName]['Database'] = $InData['Database'];
-        $GLOBALS['DB'][$ConnectionName]['DBUser'] = $InData['DBUser'];
-        $GLOBALS['DB'][$ConnectionName]['DBPassword'] = $InData['DBPassword'];
-        if (isset($InData['ConnectionLink']))
-        {
-            $GLOBALS['DB'][$ConnectionName]['ConnectionLink'] = $InData['ConnectionLink'];
-            //Test serialization/APCU issue
-            $GLOBALS['ConnLink'][0] = $InData['ConnectionLink'];
-            apcu_store('ConnLink', $InData['ConnectionLink']);
-        }
-        if (isset($InData['Options']))
-        {
-            $GLOBALS['DB'][$ConnectionName]['Options'] = $InData['Options'];
-        }
-        if (MIL_ACPU === TRUE)
-        {
-            $Resultado = apcu_store('DB', $GLOBALS['DB']);
-            if ($Resultado === FALSE)
-            {
-                $Message = 'Error registering connection over APCU';
-                AddError($Message);
-            }
-        }
-        $OutData['Success'] = TRUE;
-        $OutData['ReturnValue'] = $PoolExists;
-
-        return $ConnectionName;
-    }
 }
 
 /**
@@ -2088,7 +1823,7 @@ function JustOneStatement($Query)
 
 /**
  * TableToArray
- * Reads a table to an array, same structure as an ARRAY MySQL Query
+ * Reads a table to an array, same structure as an ASSOC MySQL Query 'Data' part
  * The offset of the initial row is 0
  * @param   array   $Data               The array to populate with data
  * @param   string  $TableName          The table to load
@@ -2124,10 +1859,6 @@ function TableToArray(&$Data, $TableName, $ConnectionIndex, $FilterCondition = "
         return FALSE;
     }
 }
-
-//Only Assoc arrays allowed
-
-
 
 /**
  * AssocToTable writes an associative array into a DB Table
@@ -2180,32 +1911,23 @@ function AssocToTable(&$Data, $TableName, $ConnectionIndex, $FullRewrite = FALSE
     {
         echo date("Y-m-d H:i:s").' -> AssocToTable '.PHP_EOL;
     }
-    print_r($Data);
+    //print_r($Data);
     //Check if not empty
     if (empty($Data) === TRUE)
     {
         return FALSE;
     }
 
-    /*Check if it is an associative array.TAKE THIS OUT AS WE USE MULTYARRAYS TO HOLD DIFFERENT RECORDS (numeric+assoc)
-    if (IsAssocArray($Data) === FALSE)
-    {
-        return FALSE;
-    }
-    */
-
-    //Check if it has MySQL ASSOC structure
+    //Check if it has MySQL ASSOC structure. Falls back for a MYSMA Data Structure
     if (IsMySQLAssocDataStructure($Data) === FALSE)
     {
-        $MySQLDS = AssocToMySQLAssoc($Data, $TableName, $ConnectionIndex, FALSE);
+        $MySQLDS = AssocToMYSMA($Data, $TableName, $ConnectionIndex, FALSE);
     }
     else
     {
         $MySQLDS = $Data;
     }
-    //print_r($MySQLDS);
 
-    //die();
     //Write data to table
     if ($FullRewrite === TRUE)
     {
@@ -2217,7 +1939,7 @@ function AssocToTable(&$Data, $TableName, $ConnectionIndex, $FullRewrite = FALSE
         }
 
         //2.- Insert values from array
-        $Result2 = InsertFromMySQlAssocDataStructure($MySQLDS, $TableName, $ConnectionIndex);
+        $Result2 = InsertFromMYSMADataStructure($MySQLDS, $TableName, $ConnectionIndex);
         if ($Result2 === FALSE)
         {
             return FALSE;
@@ -2226,13 +1948,108 @@ function AssocToTable(&$Data, $TableName, $ConnectionIndex, $FullRewrite = FALSE
     else
     {
         //Merge data into table
-        $Result = MergeFromMySQlAssocDataStructure($MySQLDS, $TableName, $ConnectionIndex);
+        $Result = MergeFromMYSMADataStructure($MySQLDS, $TableName, $ConnectionIndex);
         if ($Result === FALSE)
         {
             return FALSE;
         }
     }
 }
+
+/**
+ * MYSMAToTable writes an MYSMA structure into a DB Table
+ * We use MySQL ASSOC structure
+ * array(3) {
+ *   ["Columns"]=>
+ *   int(4)
+ *   ["Rows"]=>
+ *   int(3)
+ *   ["Data"]=>
+ *   array(3) {
+ *     [0]=>
+ *     array(4) {
+ *       ["actor_id"]=>
+ *       string(1) "1"
+ *       ["first_name"]=>
+ *       string(8) "PENELOPE"
+ *       ["last_name"]=>
+ *       string(7) "GUINESS"
+ *       ["last_update"]=>
+ *       string(19) "2006-02-15 04:34:33"
+ *     }
+ *     [1]=>
+ *     array(4) {
+ *       ["actor_id"]=>
+ *       string(1) "2"
+ *       ["first_name"]=>
+ *       string(4) "NICK"
+ *       ["last_name"]=>
+ *       string(8) "WAHLBERG"
+ *       ["last_update"]=>
+ *       string(19) "2006-02-15 04:34:33"
+ *     }
+ *   }
+ * }
+ * 
+ * @param   array     $Data               The data to insert
+ * @param   string    $TableName          The table to insert into
+ * @param   array     $ConnectionIndex    The connection to use
+ * @param   boolean   $FullRewrite        TRUE if the table is to be deleted and rewritten with the array info, false otherwise
+ * @return  boolean   TRUE on success, FALSE on failure
+ * @since   0.0.8
+ * @see     
+ * @todo  ***TEST ALL. 
+ */
+function MYSMAToTable(&$Data, $TableName, $ConnectionIndex, $FullRewrite = FALSE)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> MYSMAToTable '.PHP_EOL;
+    }
+    //print_r($Data);
+    //Check if not empty
+    if (empty($Data) === TRUE)
+    {
+        return FALSE;
+    }
+
+    //Check if it has MYSMA structure
+    if (IsMYSMADataStructure($Data) === FALSE)
+    {
+        $ErrorMessage = 'Not a MYSMA Data Structure';
+        ErrorLog($ErrorMessage, E_USER_ERROR);
+
+        return FALSE;
+    }
+
+    //Write data to table
+    if ($FullRewrite === TRUE)
+    {
+        //1.- TruncateTable
+        $Result = Truncate($ConnectionIndex, $TableName);
+        if ($Result === FALSE)
+        {
+            return FALSE;
+        }
+
+        //2.- Insert values from array
+        $Result2 = InsertFromMYSMADataStructure($Data, $TableName, $ConnectionIndex);
+        if ($Result2 === FALSE)
+        {
+            return FALSE;
+        }
+    }
+    else
+    {
+        //Merge data into table
+        $Result = MergeFromMYSMADataStructure($Data, $TableName, $ConnectionIndex);
+        if ($Result === FALSE)
+        {
+            return FALSE;
+        }
+    }
+}
+
 
 /**
  * GetMySQLTableMetadata gets  metadata from a MySQL table/resultset
@@ -2263,7 +2080,7 @@ function GetMySQLTableMetadata($TableName, $ConnectionIndex)
 
 /**
  * TableToAssoc
- * Reads a table to an array, same structure as an ASSOC MySQL Query
+ * Reads a table to an array, same structure as an ASSOC MySQL Query Dataset
  * The offset of the initial row is 0
  * @param   array   $Data               The array to populate with data
  * @param   string  $TableName          The table to load
@@ -2289,21 +2106,48 @@ function TableToAssoc(&$Data, $TableName, $ConnectionIndex, $FilterCondition = "
     $Data = Read($ConnectionIndex, $Query, 'ASSOC');
     if (is_array($Data) === TRUE)
     {
-        /*echo '*** READ COUNT***'.count($MySQLData).PHP_EOL;
-        if (!empty($MySQLData['Data']))
+        return TRUE;
+    }
+    else
+    {
+        return FALSE;
+    }
+}
+
+/**
+ * TableToMYSMA
+ * Reads a table to a  MYSMA array
+ * The offset of the initial row is 0
+ * @param   array   $Data               The array to populate with data
+ * @param   string  $TableName          The table to load
+ * @param   array   $ConnectionIndex    The connection to use
+ * @param   string  $FilterCondition    A WHERE condition to filter the table
+ * @param   int     $Offset             The offset to apply. 0 means from the beggining.
+ * @param   int     $NumRows            The number of rows to load. 18446744073709551615 means all rows as MYSQL uses unisgned 64 bit integers. But PHP has no
+ *                                          intrinsic support of unsigned integers, so we use PHP_INT_MAX = 9223372036854775807. So please use no more than
+ *                                          9 (International System) Trillions of records, even if MySQl allows you to double that
+ * @return  array   $Data by reference                              
+ * @since   0.0.7
+ * @see     https://dev.mysql.com/doc/refman/8.0/en/select.html
+ * @todo
+ */
+function TableToMYSMA(&$Data, $TableName, $ConnectionIndex, $FilterCondition = "", $Offset = 0, $NumRows = PHP_INT_MAX)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> TableToAssoc '.PHP_EOL;
+    }
+
+    $Query = "SELECT * FROM ".$TableName." ".$FilterCondition." LIMIT ".$Offset.",".$NumRows;
+    $Data = Read($ConnectionIndex, $Query, 'ASSOC');
+    if (is_array($Data) === TRUE)
+    {
+        if (empty($Data['Data']))
         {
-            //$Data = $MySQLData['Data'];
-            //echo '*** DATA COUNT***'.count($Data).PHP_EOL;
-            //We do keep all the resultset
-            $Data = $MySQLData;
+            //We return an EMPTY array not to fail on the MYSMA Structure check
+            $Data['Data'] = array();
         }
-        else
-        {
-            //Comes an empty resultset. Return it
-            print_r($MySQLData);
-            $Data = NULL;
-        }
-        */
+
         return TRUE;
     }
     else
@@ -2339,7 +2183,8 @@ function TableToAssoc(&$Data, $TableName, $ConnectionIndex, $FilterCondition = "
  * @return  boolean TRUE on success, FALSE on failure
  * @since   0.0.7
  * @see     
- * @todo 
+ * @todo To be redesigned when needed. 
+ * @deprecated  DO NOT USE.
  */
 function NumericToTable($Data, $TableName, $ConnectionIndex, $ColumnNames, $FullRewrite = FALSE)
 {
@@ -2755,7 +2600,7 @@ function MySQLTableMetadata($ResultSet, $FullInfo = FALSE)
     //print_r(get_defined_constants(TRUE));
     //$CharsetArray = get_object_vars(mysqli_get_charset($ConnectionLink));
     $MetadataObjArr = mysqli_fetch_fields($ResultSet);
-    print_r($MetadataObjArr);
+    //print_r($MetadataObjArr);
     //print_r($CharsetArray);
     //We prepare a pure assoc metadata array
     foreach ($MetadataObjArr as $FieldKey => $FieldContents)
@@ -3583,97 +3428,6 @@ function Delete($ConnectionIndex, $Query)
 }
 
 /**
- * Reconnect
- * Connects to a previously sanitized standard or persistent connection
- * @param   array   $ConnectionIndex    The connection heap
- * @return  mixed   ConnectionLink or FALSE if connection fails
- * @since   0.0.3
- * @see     
- * @todo adapt to multi-database
- * @deprecated
- */
-function Reconnect($ConnectionIndex)
-{
-    if (DEBUGMODE)
-    {
-        echo date("Y-m-d H:i:s").' -> Reconnect '.PHP_EOL;
-    }
-
-    $OutData = array();
-    $InData = array();
-    $KeepTheConnection = FALSE;
-    //If the registered index is lost, return error
-    if (!isset($GLOBALS['DB'][$ConnectionIndex]))
-    {
-        $ErrorMessage = 'Unable to find registered connection with index: '.$ConnectionIndex;
-        ErrorLog($ErrorMessage, E_USER_ERROR);
-
-        return FALSE;
-    }
-
-    //Now prepare the connections with the parameters
-    $ConnectionLink = MySQLInit($OutData);
-    if (!$ConnectionLink)
-    {
-        $ErrorMessage = 'MySQLInit failed on connection '.$ConnectionIndex;
-        ErrorLog($ErrorMessage, E_USER_ERROR);
-
-        return FALSE;
-    }
-    //Prepare data based on pooled/unpooled
-    if (is_int(MIL_POOLEDCONNECTIONS))
-    {
-        //Pooled connection. Get a random one from the pool
-        $IndexMax = MIL_POOLEDCONNECTIONS-1;
-        $RandomConn = random_int(0,$IndexMax);
-        $ConnectionData = $GLOBALS['DB'][$ConnectionIndex][$RandomConn];
-    }
-    else
-    {
-        //Single connection
-        $ConnectionData = $GLOBALS['DB'][$ConnectionIndex];
-    }
-    //Establish options registered
-    $InData['System'] = $GLOBALS['DB'][$ConnectionIndex]['System'];
-    $InData['ServerName'] = $GLOBALS['DB'][$ConnectionIndex]['ServerName'];
-    $InData['Database'] = $GLOBALS['DB'][$ConnectionIndex]['Database'];
-    $InData['DBUser'] = $GLOBALS['DB'][$ConnectionIndex]['DBUser'];
-    $InData['DBPassword'] = $GLOBALS['DB'][$ConnectionIndex]['DBPassword'];
-    if (isset($InData['ConnectionLink']))
-    {
-        //We are coming from a failed kept-up connection. Flag It
-        $KeepTheConnection = TRUE;
-    }
-    $InData['Options'] = $GLOBALS['DB'][$ConnectionIndex]['Options'];
-
-    //Stablish the connection options
-    if (MySQLOptions($InData, $OutData, $ConnectionLink) === FALSE)
-    {
-        $ErrorMessage = 'MySQLOptions failed on connection '.$ConnectionIndex;
-        ErrorLog($ErrorMessage, E_USER_ERROR);
-
-        return FALSE;
-    }
-
-    //Connect to the Database
-    if (MySQLRealConnect($InData, $OutData, $ConnectionLink) === FALSE)
-    {
-        $ErrorMessage = 'MySQLRealConnect failed on connection '.$ConnectionIndex.' with code '.mysqli_errno($ConnectionLink).': '.mysqli_error($ConnectionLink);
-        ErrorLog($ErrorMessage, E_USER_ERROR);
-
-        return FALSE;
-    }
-
-    //Everything sweet. Keep the connection if needed and return it
-    if ($KeepTheConnection === TRUE)
-    {
-        $GLOBALS['DB'][$ConnectionIndex]['ConnectionLink'] = $ConnectionLink;
-    }
-
-    return $ConnectionLink;
-}
-
-/**
  * TestConnection
  * Recreates connection array if it does not exist
  * @param   string  $ConnectionIndex
@@ -3690,7 +3444,7 @@ function TestConnection($ConnectionIndex)
     if (!isset($GLOBALS['DB'][$ConnectionIndex]))
     {
         //and no fallback cache exist, return error
-        if (MIL_ACPU === FALSE)
+        if (MIL_APCU === FALSE)
         {
             $ErrorMessage = 'No connection registered by index: '.$ConnectionIndex;
             ErrorLog($ErrorMessage, E_USER_ERROR);
@@ -3728,107 +3482,6 @@ function TestConnection($ConnectionIndex)
     {
         return TRUE;
     }
-}
-
-/**
- * TestResurrectConnection
- * Checks connection health and reconnects if necessary
- * @param   string  $ConnectionIndex
- * @return  mixed   The connection to use or FALSE on error 
- * @since   0.0.3
- * @see     
- * @todo 
- * @deprecated
- */
-function TestResurrectConnection($ConnectionIndex)
-{
-    if (DEBUGMODE)
-    {
-        echo date("Y-m-d H:i:s").' -> TestResurrectConnection '.PHP_EOL;
-    }
-
-    //If connection does not exist...
-    if (!isset($GLOBALS['DB'][$ConnectionIndex]))
-    {
-        //and no fallback cache exist, return error
-        if (MIL_ACPU === FALSE)
-        {
-            $ErrorMessage = 'No connection registered by index: '.$ConnectionIndex;
-            ErrorLog($ErrorMessage, E_USER_ERROR);
-
-            return FALSE;
-        }
-        else
-        {
-            //But if it does, recreate globals from cache
-            $ConnectionCache = apcu_fetch('DB');
-            if ($ConnectionCache === FALSE)
-            {
-                //Error when recreating globals
-                $ErrorMessage = 'No connection info available on ACPU';
-                ErrorLog($ErrorMessage, E_USER_ERROR);
-
-                return FALSE;
-            }
-            else
-            {
-                $GLOBALS['DB'] = $ConnectionCache;
-            }
-        }
-    }
-
-    //Pooled connection
-    if (is_int(MIL_POOLEDCONNECTIONS))
-    {
-        echo 'Globals[db]:';
-        print_r($GLOBALS['DB']);
-        //In any other case, we must reconnect -yes, including persistent connections
-        //Shouldn't give any problems as the connection has been checked before
-        echo '<p>Pooled connection, but no live connection found</p>';
-        $ConnectionToUse = Reconnect($ConnectionIndex);
-    }
-    else
-    {
-        //In any other case, we must reconnect -yes, including persistent connections
-        //Shouldn't give any problems as the connection has been checked before
-        //$ConnectionToUse = Reconnect($ConnectionIndex);
-        //Conexion desde $GLOBALS funciona
-        //$ConnectionToUse = $GLOBALS['ConnLink'][0];
-        //A ver desde APCU
-        $ConnectionToUse = apcu_fetch('ConnLink');
-    }
-
-    /*If it is kept, just use it
-    if ($GLOBALS['DB'][$ConnectionIndex]['KeepOpen'] === TRUE)
-    {
-        //But first, check if it is alive
-        if (is_int(MIL_POOLEDCONNECTIONS))
-        {
-            //Pooled connection
-            echo 'Globals[db]:';
-            print_r($GLOBALS['DB']);
-            if (property_exists($GLOBALS['DB'][$ConnectionIndex]['ConnectionLink'], "thread_id"))
-            {
-                $ConnectionToUse = $GLOBALS['DB'][$ConnectionIndex]['ConnectionLink'];
-            }
-        }
-        else
-        {
-            //Single connection
-            if (property_exists($GLOBALS['DB'][$ConnectionIndex]['ConnectionLink'], "thread_id"))
-            {
-                $ConnectionToUse = $GLOBALS['DB'][$ConnectionIndex]['ConnectionLink'];
-            }
-        }
-    }
-    else
-    {
-        //In any other case, we must reconnect -yes, including persistent connections
-        //Shouldn't give any problems as the connection has been checked before
-        $ConnectionToUse = Reconnect($ConnectionIndex);
-    }
-*/
-    return $ConnectionToUse;
 }
 
 /**
@@ -3928,13 +3581,35 @@ function Truncate($ConnectionIndex, $TableName)
 }
 
 /**
- * InsertFromMySQlAssocDataStructure fills a table with data from an MySQL ASSOC style array
- * Sample ASSOC MySQl Structure
+ * InsertFromMYSMADataStructure fills a table with data from an MYSMA Array
+ * Sample MYSMA Data Structure
  * array(3) {
  *   ["Columns"]=>
  *   int(4)
  *   ["Rows"]=>
  *   int(3)
+ *   [Metadata] => Array
+ *       (
+ *           [actor_id] => Array
+ *               (
+ *                   [FieldName] => actor_id
+ *                   [ColumnName] => actor_id
+ *                   [Type] => 2
+ *                   [TypeDesc] => MYSQLI_TYPE_SHORT
+ *                   [RSTable] => ActorTestTable
+ *                   [DBTable] => ActorTestTable
+ *                   [MaxValueSize] => 0
+ *                   [DefinedSize] => 5
+ *                   [Flags] => 49699
+ *                   [FlagsDesc] => NOT_NULL | PRI_KEY | UNSIGNED | AUTO_INCREMENT | NUM | PART_KEY
+ *                   [Decimals] => 0
+ *               )
+ *
+ *           [first_name] => Array
+ *                (
+ *                      ....
+ *                }
+ *       }
  *   ["Data"]=>
  *   array(3) {
  *     [0]=>
@@ -3970,11 +3645,11 @@ function Truncate($ConnectionIndex, $TableName)
  * @see     
  * @todo 
  */
-function InsertFromMySQlAssocDataStructure($Data, $TableName, $ConnectionIndex)
+function InsertFromMYSMADataStructure($Data, $TableName, $ConnectionIndex)
 {
     if (DEBUGMODE)
     {
-        echo date("Y-m-d H:i:s").' -> InsertFromMySQlAssocDataStructure '.PHP_EOL;
+        echo date("Y-m-d H:i:s").' -> InsertFromMYSMADataStructure '.PHP_EOL;
     }
 
     //Might not be a MySQLAssoc Data Structure if we are called directly
@@ -3982,6 +3657,13 @@ function InsertFromMySQlAssocDataStructure($Data, $TableName, $ConnectionIndex)
     {
         return FALSE;
     }
+
+    //If Rows are 0 or Data is empty, there is nothing to persist (empty dataset)
+    if (empty($Data['Data'])||($Data['Rows'] === 0))
+    {
+        return TRUE;
+    }
+
     //print_r($Data);
     $QueryMain = "INSERT INTO ".$TableName." (";
     $QueryValues = "(";
@@ -3995,22 +3677,6 @@ function InsertFromMySQlAssocDataStructure($Data, $TableName, $ConnectionIndex)
                 $QueryMain .= $ColumnName.", ";
             }
             $QueryValues .= MySQLProperQuote($ColumnValue, $Data['Metadata'][$ColumnName]['TypeDesc']).", ";
-            //echo $QueryValues.PHP_EOL;
-            /*
-             * Now we proper scape
-            if (is_string($ColumnValue))
-            {
-                $QueryValues .= "'".$ColumnValue."', ";
-            }
-            if (is_numeric($ColumnValue))
-            {
-                $QueryValues .= $ColumnValue.", ";
-            }
-            if (is_null($ColumnValue))
-            {
-                $QueryValues .= "NULL, ";
-            }
-             */
         }
         //Second time we do not need the column names
         if ($FirstTimePassed === FALSE)
@@ -4044,7 +3710,7 @@ function InsertFromMySQlAssocDataStructure($Data, $TableName, $ConnectionIndex)
  * @see     https://dev.mysql.com/doc/refman/8.0/en/insert-on-duplicate.html
  * @todo convert to metadata-aware. First debug the quey building
  */
-function MergeFromMySQlAssocDataStructure($Data, $TableName, $ConnectionIndex)
+function MergeFromMYSMADataStructure($Data, $TableName, $ConnectionIndex)
 {
     if (DEBUGMODE)
     {
@@ -4056,7 +3722,7 @@ function MergeFromMySQlAssocDataStructure($Data, $TableName, $ConnectionIndex)
     {
         return FALSE;
     }
-    print_r($Data);
+    //print_r($Data);
     //Here we build and run the sentence over and over
     $QueryMain = "INSERT INTO ".$TableName." (";
     $QueryValues = "(";

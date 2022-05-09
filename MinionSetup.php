@@ -15,7 +15,7 @@
 
 // General settings
 // Debug mode: shows informative messages through the logic path
-define("DEBUGMODE", TRUE);
+define("DEBUGMODE", FALSE);
 // Credentials keeping
 //  INCODE      Credentials are kept in the code (Unsafe!!)
 //  AZUREHSM    Credentials are kept in an Azure KeyVault (Much safer!!)
@@ -67,7 +67,7 @@ require_once 'Cache/Caching.php';
 //Use of ACPU or REDIS caches..
 //ACPU uses an auto-setter function when included
 define("MIL_REDIS", FALSE);             //STILL unsuported... uneffectual
-define("MIL_ACPUPERSISTLAPSE", 600);   //10 minutes to persist caches into the database
+define("MIL_APCUPERSISTLAPSE", 600);   //10 minutes to persist caches into the database
 
 //Do not forget to set the required values -see ErrorHandling.php for explanation-
 //Channel Option...
