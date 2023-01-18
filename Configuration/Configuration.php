@@ -18,8 +18,8 @@
  * @param   mixed     $Value  The constant value
  * @return  void
  * @since 0.0.7
- * @see
  * @todo
+ * @see
  */
 function Defaults($Define, $Value)
 {
@@ -40,8 +40,8 @@ function Defaults($Define, $Value)
  * @param mixed $ErrorType
  * @return  string  The error literal
  * @since 0.0.1
- * @see
  * @todo
+ * @see
  */
 function ErrorConstantToLiteral($ErrorType)
 {

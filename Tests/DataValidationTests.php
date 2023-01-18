@@ -124,6 +124,32 @@ $TestAdequateDBPort = array(
     55555   //An ephemeral port
 );
 
+$TestSuiteIsValidURI = array(
+    "",
+    "Buy It Now",
+    "localhost/foo/bar",
+    "blarg",
+    "blarg/",
+    "blarg/some/path/file.ext",
+    "http://google.com",
+    "http://google.com/",
+    "http://google.com/some/path.ext",
+    "http://google.com/some/path.ext?foo=bar",
+    "example.com",
+    "example.com/",
+    "example.com/some/path/file.ext",
+    "example.com/some/path/file.ext?foo=bar",
+    "example.com:1234",
+    "example.com:1234/",
+    "example.com:1234/some/path/file.ext",
+    "example.com:1234/some/path/file.ext?foo=bar",
+    "//foobar.com",
+    "//foobar.com/",
+    "//foobar.com/path/file.txt",
+    "//cdn.example.com/js_file.js",
+    "http://example.com?id=some-file-id"
+);
+
 echo PHP_EOL.PHP_EOL.'Testing UTF8 text'.PHP_EOL;
 
 foreach ($TestSuiteUTF8 as $Value)
@@ -153,7 +179,6 @@ foreach ($TestSuiteUTF8 as $Value)
         echo '(LONG) '.$Value.' *IS NOT* valid UTF-8 text'.PHP_EOL;
     }
 }
-
 
 echo PHP_EOL.PHP_EOL.'Testing internal hostnames'.PHP_EOL;
 
@@ -299,6 +324,20 @@ foreach ($TestAdequateDBPort as $Value)
     echo 'Port '.$Value.' is '.$Result['code'].' due to '.$Result['explanation'].PHP_EOL;
 }
 
+//Testing Valid URIs
+echo PHP_EOL.PHP_EOL.'Testing URIs'.PHP_EOL;
+
+foreach ($TestSuiteIsValidURI as $Value)
+{
+    if (IsValidURI($Value) === TRUE)
+    {
+        echo $Value.' is a valid RFC 3986 URI/URL'.PHP_EOL;
+    }
+    else
+    {
+        echo $Value.' *IS NOT* a valid RFC 3986 URI/URL'.PHP_EOL;
+    }
+}
 
 
 

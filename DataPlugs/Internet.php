@@ -23,13 +23,13 @@
  *      3 If CSV not present, write online file
  * @param   int     $Retention number of days to keep the last download
  * @return  mixed   The path to the data on success, FALSE on error
- * @since 1.0
+ * @since 0.0.1
  * @todo
  */
 function GetIanaTLDs($Retention = 5)
 {
     //Check if CSV is already present
-    $FilePath = DATA_PLUG_STORAGE.'/'.'TLDsALphaByDomain.csv';
+    $FilePath = MIL_DATA_PLUG_STORAGE.'/'.'TLDsALphaByDomain.csv';
     if (file_exists($FilePath))
     {
         //Get file modification time

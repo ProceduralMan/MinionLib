@@ -1,4 +1,79 @@
 # MinionLib Change Log
+## Version 0.0.9 (2022-12-06)
+- Configuration Functions:
+  - CheckPHPVersion Checks if the runtime PHP version is the same or newer than the required one
+  - CheckcURLVersion Checks if the runtime version is the same or newer than the required one.
+  - FNAcURLVersion (F)irst (N)on (A)vailable cURL version. Checks if the runtime version is older than the FNA one.
+  - CheckOpenSSLVersion Checks if the runtime version is the same or newer than the required one.
+- Data Validation Functions:
+  - ISODateNoEarlierThan checks that date is in ISO format (YYYY-MM-DD) and later or the same as a limit date
+  - ISODateNoLaterThan checks that date is in ISO format (YYYY-MM-DD) and earlier or the same as a limit date
+  - ISODateTimeNoEarlierThan checks that date is in ISO format (YYYY-MM-DD HH:MM:SS) and later or the same as a limit date
+  - ISODateTimeNoLaterThan checks that date is in ISO format (YYYY-MM-DD HH:MM:SS) and earlier or the same as a limit date
+  - IsValidBase64SHA256 validates a base64-encoded SHA256
+  - IsValidHostname validates a RFC1123 hostname
+  - IsValidHTTPMethod validates a string as a valid HTTP method
+  - IsValidInt validates that it is really an Int and value is between Min and Max
+  - IsValidIP validates an IPv4 or IPv6
+  - IsValidIPv4 validates an IPv4
+  - IsValidIPv6 validates an IPv6
+  - IsValidISODate checks that date is in ISO format (YYYY-MM-DD), is valid, and within a range of dates
+  - IsValidISODateTime hecks that datetime is in ISO format (YYYY-MM-DD HH:MM:SS), is valid, and within a range of datetimes
+  - IsValidMD5 validates a MD5 hash
+  - IsValidSHA256 validates a SHA256 hash
+  - IsValidURI validates an URL/URI based on RFC3986
+- Emailing:
+  - Support for direct mailing using a procedural wrapper to PHPMailer
+  - SimpleHTMLEmail sends a simple email with no images or attachments. Credential are taken from defined constants
+  - SimpleHTMLEmailWC sends a simple email with no images or attachments. Credentials are passed as parameters
+- Interconnection Functions:
+  - cURLFileGET downloads a file to a destination
+  - cURLFilePOST uploads a file to a destination using POST
+  - cURLFilePUT uploads a file to a destination using PUT
+  - cURLFullGET does a full HTTP GET operation via cURL
+  - cURLFullHEAD does a full HTTP HEAD operation via cURL
+  - cURLFullPOST does a full HTTP POST operation via cURL
+  - cURLOptionConstantToLiteral turns standard int cURL option constants to option literals
+  - cURLOptionsValidate validates the options set to make sure that follow what is stablished and the required PHP/cURL/OpenSSL versions are available
+  - cURLSimpleFileGET downloads a file to a destination with fixed, known to work options
+  - cURLSimpleFilePOST uploads a file to a destination using POST with fixed, known to work options
+  - cURLSimpleFilePUT uploads a file to a destination using PUT with fixed, known to work options
+  - cURLSimpleGET does s simple HTTP GET operation via cURL using fixed, known to work options
+  - cURLSimpleHEAD does a simple HTTP HEAD operation via cURL using fixed, known to work options
+  - cURLSimplePOST does a simple HTTP POST operation via cURL using fixed, known to work options
+  - cURLWarn raises a warning on an undocumented/obsolete/deprecated cURL option
+- Text and String Functions
+  - MBPathInfo a multibyte-safe and cross-platform version of PHP pathinfo()
+  - MimeType finds the mime type of a file represented by a physical path or a URL
+- Renewables Monitoring (SolarEdge)
+  - SEAPICurrentVersion returns the most updated version number in <major.minor.revision> format.
+  - SEAPISupportedVersions returns a list of supported version numbers in <major.minor.revision> format
+  - SEAccountsList returns a list of sites related to the given token, which is the account api_key
+  - SEBulkSiteDataPeriod returns the energy production start and end dates of the site
+  - SEBulkSiteEnergy returns the  energy measurements of a number of sites
+  - SEBulkSiteEnergyTimePeriod returns the site total energy produced for a given period of a number of sites
+  - SEBulkSiteOverview returns the overview data of a number of sites
+  - SEBulkSitePower returns power measurements in 15 minutes resolution for a number of sites
+  - SEInverterMeasures returns specific inverter data -measures- for a given timeframe
+  - SESiteChangesLog returns a list of equipment component replacements ordered by date
+  - SESiteComponents returns a list of inverters/SMIs in the specific site
+  - SESiteDataPeriod returns the energy production start and end dates of the site
+  - SESiteDetails returns the site details, such as name, location, status, etc
+  - SESiteEnergy returns the site energy measurements
+  - SESiteEnergyDetailed detailed site energy measurements from meters such as consumption, export (feed-in), import (purchase), etc
+  - SESiteEnergyTimePeriod returns the site total energy produced for a given period
+  - SESiteEnergyTimePeriodPerMeter returns for each meter on site its lifetime energy reading, metadata and the device to which it’s connected to
+  - SESiteEnvironmentalBenefits returns all environmental benefits based on site energy production: CO2 emissions saved, equivalent trees planted, and light bulbs powered for a day
+  - SESiteInventory returns the inventory of SolarEdge equipment in the site, including inverters/SMIs, batteries, meters, gateways and sensors
+  - SESiteList returns a list of sites related to the given token, which is the account api_key
+  - SESiteOverview returns the site overview data
+  - SESitePower returns the site power measurements in 15 minutes resolution
+  - SESitePowerDetailed returns the site power measurements in 15 minutes resolution
+  - SESitePowerFlow retrieves the current power flow between all elements of the site including PV array, storage (battery), loads (consumption) and grid
+  - SESiteSensorsData returns the data of all the sensors in the site, by the gateway they are connected to
+  - SESiteSensorsList returns a list of all the sensors in the site, and the device to which they are connected.
+  - SESiteStorageData gets detailed storage information from batteries: the state of energy, power and lifetime energy
+
 ## Version 0.0.8 (2022-05-09)
 - Bug Fixes:
   - APCU2Array does not NOTICE on cache misses

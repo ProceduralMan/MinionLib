@@ -14,11 +14,157 @@
  */
 
 /**
+ * IsValidIP validates an IPv4 or IPv6
+ * @param   string      $IP the IP to validate
+ * @return  boolean     TRUE if valid, FALSE if invalid
+ * @since   0.0.9
+ * @see
+ * @todo
+ */
+function IsValidIP($IP)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsValidIP '.PHP_EOL;
+    }
+
+    //IPv4
+    //if (preg_match("/^(((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))/", $IP))
+    if (preg_match("/(([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){1}(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){2}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/", $IP))
+    {
+        //echo "=>Good by IPV4=>";
+
+        return TRUE;
+    }
+
+    //IPv6
+    if (preg_match("/([a-f0-9:]+:+)+[a-f0-9]+/", $IP))
+    {
+        //echo "=>Good by IPV6=>";
+
+        return TRUE;
+    }
+
+    //No luck
+    return FALSE;
+}
+
+
+/**
+ * IsValidIPv4 validates an IPv4
+ * @param   string      $IP the IP to validate
+ * @return  boolean     TRUE if valid, FALSE if invalid
+ * @since   0.0.9
+ * @see
+ * @todo
+ */
+function IsValidIPv4($IP)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsValidIPv4 '.PHP_EOL;
+    }
+
+    //IPv4
+    //if (preg_match("/^(((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))/", $IP))
+    if (preg_match("/(([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){1}(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){2}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/", $IP))
+    {
+        //echo "=>Good by IPV4=>";
+
+        return TRUE;
+    }
+
+    //No luck
+    return FALSE;
+}
+
+/**
+ * IsValidIPv6 validates an IPv6
+ * @param   string      $IP IP to validate
+ * @return  boolean     TRUE if valid, FALSE if invalid
+ * @since   0.0.9
+ * @see
+ * @todo
+ */
+function IsValidIPv6($IP)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsValidIPv4 '.PHP_EOL;
+    }
+
+    //IPv6
+    if (preg_match("/([a-f0-9:]+:+)+[a-f0-9]+/", $IP))
+    {
+        //echo "=>Good by IPV6=>";
+
+        return TRUE;
+    }
+
+    //No luck
+    return FALSE;
+}
+
+/**
+ * IsValidHostname validates a RFC1123 hostname
+ * @param   string      $HostnameOrIP the host or IP to validate
+ * @return  boolean     TRUE if valid, FALSE if invalid
+ * @since   0.0.1
+ * @see
+ * @todo
+ */
+function IsValidHostName($HostnameOrIP)
+{
+    if (DEBUGMODE)
+    {
+        echo date("Y-m-d H:i:s").' -> IsValidHostName '.PHP_EOL;
+    }
+
+    //Localhost is OK
+    if ($HostnameOrIP === 'localhost')
+    {
+        //echo "=>Good by localhost=>";
+
+        return TRUE;
+    }
+    else
+    {
+        //echo 'Not localhost =>';
+    }
+
+    //RFC1123 hostname
+    //Each label within a valid hostname may be no more than 63 octets long
+    //The total length of the hostname must not exceed 255 characters.
+    //if (preg_match("/((([a-zA-Z]|[a-zA-Z][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z|[A-Za-z][A-Za-z0-9\‌\u{200b}-]*[A-Za-z0-9])))$/gm/", $HostnameOrIP))
+    //if (preg_match("/^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/", $HostnameOrIP))
+    if (preg_match("/^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$/", $HostnameOrIP))
+    {
+        //echo 'Passes RFC1123 rexexp=>';
+        if (strlen($HostnameOrIP)<254)
+        {
+            //echo 'Passes RFC1123 less than 254 chars=>';
+            return TRUE;
+        } //END hostname is lower than 254 chars
+        else
+        {
+            //echo "=>Bad by RFC1123 (bigger than 253 chars)=>";
+        }
+    } //End hostname has only alphanumeric chars and hyphen
+    else
+    {
+        //echo "=>Bad by RFC1123 (regexp failure)=>";
+    }
+
+    //No luck
+    return FALSE;
+}
+
+/**
  * IsValidHost validates a hostname, IPv4 or IPv6
- * @param type $HostnameOrIP
- * @param mixed $PublicNetwork
- * @return boolean TRUE if valid, FALSE if invalid
- * @since 0.0.1
+ * @param   string      $HostnameOrIP the host or IP to validate
+ * @param   boolean     $PublicNetwork must check or not for valid TLDs (TRUE)
+ * @return  boolean     TRUE if valid, FALSE if invalid
+ * @since   0.0.1
  * @see
  * @todo
  */
@@ -130,6 +276,7 @@ function IsValidHost($HostnameOrIP, $PublicNetwork = TRUE)
     {
         //echo "=>Bad by RFC1123 (regexp failure)=>";
     }
+
     //No luck
     return FALSE;
 }
@@ -408,7 +555,8 @@ function IsValidCharset($Charset, $System)
         'utf8mb4',  //UTF-8 Unicode
     );
 
-    switch ($System) {
+    switch ($System)
+    {
         case "MIL_CUBRID":
         case "CUBRID":
             $ErrorMessage = "Unimplemented system. Open an issue in https://github.com/ProceduralMan/MinionLib if you need it";
@@ -675,7 +823,8 @@ function IsAdequateDatabasePort($System, $PortNumber, $Proto = 'TCP')
     }
 
     //Status-based return code
-    switch ($TCPPorts[$ValidationKey]['STATUS']) {
+    switch ($TCPPorts[$ValidationKey]['STATUS'])
+    {
         case 'UNASSIGNED':
             $Result['code'] = 'OK';
             $Result['service'] = NULL;
@@ -859,6 +1008,481 @@ function IsMYSMADataStructure(&$Data)
         echo date("Y-m-d H:i:s").' -> IsMySQLAssocDataStructure '.PHP_EOL;
     }
     if ((isset($Data['Columns']) === FALSE)||(isset($Data['Rows']) === FALSE)||(isset($Data['Metadata']) === FALSE)||(isset($Data['Data']) === FALSE))
+    {
+        return FALSE;
+    }
+    else
+    {
+        return TRUE;
+    }
+}
+
+/**
+ * IsValidURI
+ * Validates an URL/URI based on RFC3986
+ * @param   string  $URI    The URI(URL) to check
+ * @return  boolean TRUE if it is a valid URI, FALSE otherwise
+ * @since   0.0.9
+ * @see     taken from https://gist.github.com/kpobococ/92f120c6c4a9a52b84e3
+ * @todo
+ */
+function IsValidURI($URI)
+{
+    // Play around with this regexp online:
+    // http://regex101.com/r/hZ5gU9/1
+
+    // Links to relevant RFC documents:
+    // RFC 3986: http://tools.ietf.org/html/rfc3986 (URI scheme)
+    // RFC 2234: http://tools.ietf.org/html/rfc2234#section-6.1 (ABNF notation)
+    $RegExp = '/
+    # URI scheme RFC 3986
+    (?(DEFINE)
+      # ABNF notation of RFC 2234
+    
+      (?<ALPHA>     [\x41-\x5A\x61-\x7A] )    # Latin character (A-Z, a-z)
+      (?<CR>        \x0D )                    # Carriage return (\r)
+      (?<DIGIT>     [\x30-\x39] )             # Decimal number (0-9)
+      (?<DQUOTE>    \x22 )                    # Double quote (")
+      (?<HEXDIG>    (?&DIGIT) | [\x41-\x46] ) # Hexadecimal number (0-9, A-F)
+      (?<LF>        \x0A )                    # Line feed (\n)
+      (?<SP>        \x20 )                    # Space
+    
+      # RFC 3986 body
+    
+      (?<uri>    (?&scheme) \: (?&hier_part) (?: \? (?&query) )? (?: \# (?&fragment) )? )
+    
+      (?<hier_part>    \/\/ (?&authority) (?&path_abempty)
+                     | (?&path_absolute)
+                     | (?&path_rootless)
+                     | (?&path_empty) )
+    
+      (?<uri_reference>    (?&uri) | (?&relative_ref) )
+    
+      (?<absolute_uri>    (?&scheme) \: (?&hier_part) (?: \? (?&query) )? )
+    
+      (?<relative_ref>    (?&relative_part) (?: \? (?&query) )? (?: \# (?&fragment) )? )
+    
+      (?<relative_part>     \/\/ (?&authority) (?&path_abempty)
+                          | (?&path_absolute)
+                          | (?&path_noscheme)
+                          | (?&path_empty) )
+    
+      (?<scheme>    (?&ALPHA) (?: (?&ALPHA) | (?&DIGIT) | \+ | \- | \. )* )
+    
+      (?<authority>    (?: (?&userinfo) \@ )? (?&host) (?: \: (?&port) )? )
+      (?<userinfo>     (?: (?&unreserved) | (?&pct_encoded) | (?&sub_delims) | \: )* )
+      (?<host>         (?&ip_literal) | (?&ipv4_address) | (?&reg_name) )
+      (?<port>         (?&DIGIT)* )
+    
+      (?<ip_literal>    \[ (?: (?&ipv6_address) | (?&ipv_future) ) \] )
+    
+      (?<ipv_future>    \x76 (?&HEXDIG)+ \. (?: (?&unreserved) | (?&sub_delims) | \: )+ )
+    
+      (?<ipv6_address>                                              (?: (?&h16) \: ){6} (?&ls32)
+                        |                                      \:\: (?: (?&h16) \: ){5} (?&ls32)
+                        |                           (?&h16)?   \:\: (?: (?&h16) \: ){4} (?&ls32)
+                        | (?: (?: (?&h16) \: ){0,1} (?&h16) )? \:\: (?: (?&h16) \: ){3} (?&ls32)
+                        | (?: (?: (?&h16) \: ){0,2} (?&h16) )? \:\: (?: (?&h16) \: ){2} (?&ls32)
+                        | (?: (?: (?&h16) \: ){0,3} (?&h16) )? \:\:     (?&h16) \:      (?&ls32)
+                        | (?: (?: (?&h16) \: ){0,4} (?&h16) )? \:\:                     (?&ls32)
+                        | (?: (?: (?&h16) \: ){0,5} (?&h16) )? \:\:                     (?&h16)
+                        | (?: (?: (?&h16) \: ){0,6} (?&h16) )? \:\: )
+    
+      (?<h16>             (?&HEXDIG){1,4} )
+      (?<ls32>            (?: (?&h16) \: (?&h16) ) | (?&ipv4_address) )
+      (?<ipv4_address>    (?&dec_octet) \. (?&dec_octet) \. (?&dec_octet) \. (?&dec_octet) )
+    
+      (?<dec_octet>    (?&DIGIT)
+                     | [\x31-\x39] (?&DIGIT)
+                     | \x31 (?&DIGIT){2}
+                     | \x32 [\x30-\x34] (?&DIGIT)
+                     | \x32\x35 [\x30-\x35] )
+    
+      (?<reg_name>     (?: (?&unreserved) | (?&pct_encoded) | (?&sub_delims) )* )
+    
+      (?<path>    (?&path_abempty)
+                | (?&path_absolute)
+                | (?&path_noscheme)
+                | (?&path_rootless)
+                | (?&path_empty) )
+    
+      (?<path_abempty>     (?: \/ (?&segment) )* )
+      (?<path_absolute>    \/ (?: (?&segment_nz) (?: \/ (?&segment) )* )? )
+      (?<path_noscheme>    (?&segment_nz_nc) (?: \/ (?&segment) )* )
+      (?<path_rootless>    (?&segment_nz) (?: \/ (?&segment) )* )
+      (?<path_empty>       (?&pchar){0} ) # For explicity only
+    
+      (?<segment>       (?&pchar)* )
+      (?<segment_nz>    (?&pchar)+ )
+      (?<segment_nz_nc> (?: (?&unreserved) | (?&pct_encoded) | (?&sub_delims) | \@ )+ )
+    
+      (?<pchar>    (?&unreserved) | (?&pct_encoded) | (?&sub_delims) | \: | \@ )
+    
+      (?<query>    (?: (?&pchar) | \/ | \? )* )
+    
+      (?<fragment>    (?: (?&pchar) | \/ | \? )* )
+    
+      (?<pct_encoded>    \% (?&HEXDIG) (?&HEXDIG) )
+    
+      (?<unreserved>    (?&ALPHA) | (?&DIGIT) | \- | \. | \_ | \~ )
+      (?<reserved>      (?&gen_delims) | (?&sub_delims) )
+      (?<gen_delims>    \: | \/ | \? | \# | \[ | \] | \@ )
+      (?<sub_delims>    \! | \$ | \& | \' | \( | \)
+                      | \* | \+ | \, | \; | \= )
+    
+    )
+    ^(?&uri)$
+    /x';
+
+    if (preg_match($RegExp, $URI) === 1)
+    {
+        return TRUE;
+    }
+    else
+    {
+        //Unmatching or erroneous
+        return FALSE;
+    }
+}
+
+/**
+ * IsValidMD5
+ * Validates a string as a valid MD5 hex string
+ * @param string    $Hash  The MD5 to check
+ * @return boolean  TRUE if it is a valid MD5, FALSE otherwise
+ * @since   0.0.9
+ * @see     
+ * @todo
+ */
+function IsValidMD5($Hash)
+{
+    if ((is_string($Hash))&&(strlen($Hash) === 32)&&(trim($Hash, '0..9A..Fa..f') === ''))
+    {
+        // string is 32 byte hexadecimal string
+        return TRUE;
+    }
+    else
+    {
+        return FALSE;
+    }
+}
+
+/**
+ * IsValidSHA256
+ * Validates a string as a valid SHA256 hex string
+ * @param string    $Hash  The SHA256 to check
+ * @return boolean  TRUE if it is a valid SHA256, FALSE otherwise
+ * @since   0.0.9
+ * @see     
+ * @todo
+ */
+function IsValidSHA256($Hash)
+{
+    if ((is_string($Hash))&&(strlen($Hash) === 64)&&(trim($Hash, '0..9A..Fa..f') === ''))
+    {
+        // string is 64 byte hexadecimal string
+        return TRUE;
+    }
+    else
+    {
+        return FALSE;
+    }
+}
+
+/**
+ * IsValidBase64SHA256
+ * Validates a string as a valid base64-encoded SHA256 hex string
+ * @param string    $Hash  The base64-encoded SHA256 to check
+ * @return boolean  TRUE if it is a valid SHA256, FALSE otherwise
+ * @since   0.0.9
+ * @see     
+ * @todo
+ */
+function IsValidBase64SHA256($Hash)
+{
+    return IsValidSHA256(base64_decode($Hash));
+}
+
+
+/**
+ * IsValidHTTPMethod
+ * Validates a string as a valid HTTP method
+ * @param   string  $HTTPMethod the method to test
+ * @return  boolean TRUE if it is a valid HTTP method, FALSE otherwise
+ * @since   0.0.9
+ * @see     https://reqbin.com/Article/HttpMethods
+ *          https://www.restapitutorial.com/lessons/httpmethods.html
+ * @todo
+ */
+function IsValidHTTPMethod($HTTPMethod)
+{
+    $ValidHTTPMethods = array('GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'CONNECT', 'TRACE');
+    if (!in_array($HTTPMethod, $ValidHTTPMethods))
+    {
+        return FALSE;
+    }
+    else
+    {
+        return TRUE;
+    }
+}
+
+/**
+ * IsValidInt
+ * Validates that it is really an Int and value is between Min and Max
+ * @param mixed     $Value  The value to test
+ * @param int       $Min    Value must be equal to or greater than this
+ * @param int       $Max    Value must be equal to or lower than this
+ * @return boolean  TRUE if it is really an Int and value is between Min and Max, FALSE otherwise
+ * @since   0.0.9
+ * @see     
+ * @todo
+ */
+function IsValidInt($Value, $Min = NULL, $Max = NULL)
+{
+    //Must be an INT
+    if (!is_int($Value))
+    {
+        return FALSE;
+    }
+
+    //Equal to or bigger than MIN, if specified
+    if (!empty($Min)&&($Value<$Min))
+    {
+        return FALSE;
+    }
+
+    //Equal to or lower than MAX, if specified
+    if (!empty($Max)&&($Value>$Max))
+    {
+        return FALSE;
+    }
+
+    //All good, is a proper Int
+    return TRUE;
+}
+
+/**
+ * IsValidISODate
+ * Checks that date is in ISO format (YYYY-MM-DD), is valid, and within a range of dates
+ * @param   string $Value       The date to check
+ * @param   string $StartDate   The below limit date
+ * @param   string $EndDate     The above limit date
+ * @return  boolean TRUE if it is a valid date within the desired range, FALSE otherwise
+ * @since   0.0.9
+ * @see     
+ * @todo
+ */
+function IsValidISODate($Value, $StartDate, $EndDate)
+{
+    //Create Date Object
+    $ObjectiveDate = date_create_from_format('Y-m-d', $Value);
+    if ($ObjectiveDate === FALSE)
+    {
+        return FALSE;
+    }
+
+    //Check validity
+    if (date_format($ObjectiveDate, 'Y-m-d') !== $Value)
+    {
+        //Non-valid date
+        return FALSE;
+    }
+
+    //Check limits
+    $MinDate = date_create_from_format('Y-m-d', $StartDate);
+    if ($MinDate === FALSE)
+    {
+        return FALSE;
+    }
+
+    $MaxDate = date_create_from_format('Y-m-d', $EndDate);
+    if ($MaxDate === FALSE)
+    {
+        return FALSE;
+    }
+
+    if (($ObjectiveDate<$MinDate)||($ObjectiveDate>$MaxDate))
+    {
+        return FALSE;
+    }
+    else
+    {
+        return TRUE;
+    }
+}
+
+/**
+ * IsValidISODateTime
+ * Checks that datetime is in ISO format (YYYY-MM-DD HH:MM:SS), is valid, and within a range of datetimes
+ * @param   string $Value       The date to check
+ * @param   string $StartDate   The below limit date
+ * @param   string $EndDate     The above limit date
+ * @return  boolean TRUE if it is a valid date within the desired range, FALSE otherwise
+ * @since   0.0.9
+ * @see     
+ * @todo
+ */
+function IsValidISODateTime($Value, $StartDate, $EndDate)
+{
+    //Create Date Object
+    $ObjectiveDate = date_create_from_format('Y-m-d H:i:s', $Value);
+    if ($ObjectiveDate === FALSE)
+    {
+        return FALSE;
+    }
+
+    //Check validity
+    if (date_format($ObjectiveDate, 'Y-m-d H:i:s') !== $Value)
+    {
+        //Non-valid date
+        return FALSE;
+    }
+
+    //Check limits
+    $MinDate = date_create_from_format('Y-m-d H:i:s', $StartDate);
+    if ($MinDate === FALSE)
+    {
+        return FALSE;
+    }
+
+    $MaxDate = date_create_from_format('Y-m-d H:i:s', $EndDate);
+    if ($MaxDate === FALSE)
+    {
+        return FALSE;
+    }
+
+    if (($ObjectiveDate<$MinDate)||($ObjectiveDate>$MaxDate))
+    {
+        return FALSE;
+    }
+    else
+    {
+        return TRUE;
+    }
+}
+
+/**
+ * ISODateNoLaterThan
+ * Checks that date is in ISO format (YYYY-MM-DD) and earlier or the same as a limit date
+ * @param   string  $Value the date to check
+ * @param   string  $Limit the limit date
+ * @return  boolean TRUE if $Value is the same as $Limit or earlier. FALSE otherwise.
+ * @since   0.0.9
+ * @see     
+ * @todo
+ */
+function ISODateNoLaterThan($Value, $Limit)
+{
+    $ObjectiveDate = date_create_from_format('Y-m-d', $Value);
+    if ($ObjectiveDate === FALSE)
+    {
+        return FALSE;
+    }
+
+    $MaxDate = date_create_from_format('Y-m-d', $Limit);
+    if ($MaxDate === FALSE)
+    {
+        return FALSE;
+    }
+
+    if ($ObjectiveDate>$MaxDate)
+    {
+        return FALSE;
+    }
+    else
+    {
+        return TRUE;
+    }
+}
+
+/**
+ * ISODateNoEarlierThan
+ * Checks that date is in ISO format (YYYY-MM-DD) and later or the same as a limit date
+ * @param   string  $Value the date to check
+ * @param   string  $Limit the limit date
+ * @return  boolean TRUE if $Value is the same as $Limit or later. FALSE otherwise.
+ */
+function ISODateNoEarlierThan($Value, $Limit)
+{
+    $ObjectiveDate = date_create_from_format('Y-m-d', $Value);
+    if ($ObjectiveDate === FALSE)
+    {
+        return FALSE;
+    }
+
+    $MaxDate = date_create_from_format('Y-m-d', $Limit);
+    if ($MaxDate === FALSE)
+    {
+        return FALSE;
+    }
+
+    if ($ObjectiveDate<$MaxDate)
+    {
+        return FALSE;
+    }
+    else
+    {
+        return TRUE;
+    }
+}
+
+/**
+ * ISODateTimeNoLaterThan
+ * Checks that date is in ISO format (YYYY-MM-DD HH:MM:SS) and earlier or the same as a limit date
+ * @param   string  $Value the date to check
+ * @param   string  $Limit the limit date
+ * @return  boolean TRUE if $Value is the same as $Limit or earlier. FALSE otherwise.
+ * @since   0.0.9
+ * @see     
+ * @todo
+ */
+function ISODateTimeNoLaterThan($Value, $Limit)
+{
+    $ObjectiveDate = date_create_from_format('Y-m-d H:i:s', $Value);
+    if ($ObjectiveDate === FALSE)
+    {
+        return FALSE;
+    }
+
+    $MaxDate = date_create_from_format('Y-m-d H:i:s', $Limit);
+    if ($MaxDate === FALSE)
+    {
+        return FALSE;
+    }
+
+    if ($ObjectiveDate>$MaxDate)
+    {
+        return FALSE;
+    }
+    else
+    {
+        return TRUE;
+    }
+}
+
+/**
+ * ISODateTimeNoEarlierThan
+ * Checks that date is in ISO format (YYYY-MM-DD HH:MM:SS) and later or the same as a limit date
+ * @param   string  $Value the date to check
+ * @param   string  $Limit the limit date
+ * @return  boolean TRUE if $Value is the same as $Limit or later. FALSE otherwise.
+ */
+function ISODateTimeNoEarlierThan($Value, $Limit)
+{
+    $ObjectiveDate = date_create_from_format('Y-m-d H:i:s', $Value);
+    if ($ObjectiveDate === FALSE)
+    {
+        return FALSE;
+    }
+
+    $MaxDate = date_create_from_format('Y-m-d H:i:s', $Limit);
+    if ($MaxDate === FALSE)
+    {
+        return FALSE;
+    }
+
+    if ($ObjectiveDate<$MaxDate)
     {
         return FALSE;
     }

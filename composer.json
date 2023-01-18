@@ -4,9 +4,10 @@
     "type": "library",
     "homepage": "https://github.com/ProceduralMan/MinionLib",
     "require": {
-        "php": ">=7.0.0"
+        "php": ">=7.0.0",
+        "phpmailer/phpmailer": "^6.5"
     },
-    "license": "LGPL-2.1-or-later",
+    "license": "LGPL-3.0-or-later",
     "authors": [
         {
             "name": "Procedural Man",

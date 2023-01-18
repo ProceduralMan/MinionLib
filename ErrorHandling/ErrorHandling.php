@@ -1288,7 +1288,7 @@ function ProcessError($InData,&$OutData)
     //Prepare Dates
     $ServerDate = date_create();                            //ServerDate in the server TimeZone
     $LogRecord['ServerDate'] = date_format($ServerDate,"Y-m-d H:i:s T");
-    date_timezone_set($ServerDate, timezone_open(LOCALTZ));                //Change to localTZ
+    date_timezone_set($ServerDate, timezone_open(MIL_LOCALTZ));                //Change to localTZ
     $LogRecord['LocalDate'] = date_format($ServerDate,"Y-m-d H:i:s T");
     //Add info to the Heap. No matter if it is set already or not. Somebody must do it first.
     $LogRecord['LogLevel'] = $InData['LogLevel'];
@@ -1718,7 +1718,7 @@ function AddNotifyError(&$OutData)
     //Add info to the Heap.
     $ServerDate = date_create();                            //ServerDate in the server TimeZone
     $LogRecord['ServerDate'] = date_format($ServerDate,"YmdTH:i:s");
-    date_timezone_set($ServerDate, timezone_open(LOCALTZ));                //Change to localTZ
+    date_timezone_set($ServerDate, timezone_open(MIL_LOCALTZ));                //Change to localTZ
     $LogRecord['LocalDate'] = date_format($ServerDate,"YmdTH:i:s");
     $LogRecord['LogLevel'] = ERROR;
     $LogRecord['EventText'] = "Error while notifying the error: ".$OutData['ReturnValue'];
@@ -1769,7 +1769,7 @@ function AddPEError(&$OutData)
     //Add info to the Heap.
     $ServerDate = date_create();                            //ServerDate in the server TimeZone
     $LogRecord['ServerDate'] = date_format($ServerDate,"YmdTH:i:s");
-    date_timezone_set($ServerDate, timezone_open(LOCALTZ));                //Change to localTZ
+    date_timezone_set($ServerDate, timezone_open(MIL_LOCALTZ));                //Change to localTZ
     $LogRecord['LocalDate'] = date_format($ServerDate,"YmdTH:i:s");
     $LogRecord['LogLevel'] = ERROR;
     $LogRecord['EventText'] = "Error while processing error on ProcessError";
@@ -2228,50 +2228,53 @@ function NotifyError()
             }
         }
         //For each logger
-        foreach ($GLOBALS['Loggers'] as $Logger)
+        if (isset($GLOBALS['Loggers']))
         {
-            //Foreach error on the Heap
-            if (DEBUGMODE)
+            foreach ($GLOBALS['Loggers'] as $Logger)
             {
-                echo 'For '.count($ErrorLog).' Errors'.PHP_EOL;
-            }
-            foreach ($ErrorLog as $ErrorRecord)
-            {
-                //Prepare syncretic record
-                $PEDInData['Logger'] = $Logger;
-                $PEDInData['ErrorRecord'] = $ErrorRecord;
-                $PEDOutData = array();
-                $PED = PreprocessErrorData($PEDInData, $PEDOutData);
-                if ($PED === FALSE)
+                //Foreach error on the Heap
+                if (DEBUGMODE)
                 {
-                    AddNotifyError($MyOutData);
+                    echo 'For '.count($ErrorLog).' Errors'.PHP_EOL;
                 }
-                else
+                foreach ($ErrorLog as $ErrorRecord)
                 {
-                    if ($ErrorRecord['LogLevel']>=$Logger['ErrorLevel'])
+                    //Prepare syncretic record
+                    $PEDInData['Logger'] = $Logger;
+                    $PEDInData['ErrorRecord'] = $ErrorRecord;
+                    $PEDOutData = array();
+                    $PED = PreprocessErrorData($PEDInData, $PEDOutData);
+                    if ($PED === FALSE)
                     {
-                        $FELOutcome = FormatErrorLog($PEDOutData['ReturnValue'], $MyOutData);
-                        if ($FELOutcome === FALSE)
+                        AddNotifyError($MyOutData);
+                    }
+                    else
+                    {
+                        if ($ErrorRecord['LogLevel']>=$Logger['ErrorLevel'])
                         {
-                            AddNotifyError($MyOutData);
-                        }
-                        else
-                        {
-                            //Process the error
-                            $InData = $Logger;
-                            $InData['FormattedLog'] = $MyOutData['ReturnValue'];
-                            $REOutcome = RegisterError($InData, $MyOutData);
-                            if ($REOutcome === FALSE)
+                            $FELOutcome = FormatErrorLog($PEDOutData['ReturnValue'], $MyOutData);
+                            if ($FELOutcome === FALSE)
                             {
-                                echo $MyOutData['ReturnValue'].PHP_EOL;
+                                AddNotifyError($MyOutData);
+                            }
+                            else
+                            {
+                                //Process the error
+                                $InData = $Logger;
+                                $InData['FormattedLog'] = $MyOutData['ReturnValue'];
+                                $REOutcome = RegisterError($InData, $MyOutData);
+                                if ($REOutcome === FALSE)
+                                {
+                                    echo $MyOutData['ReturnValue'].PHP_EOL;
 
-                                exit(2);
+                                    exit(2);
+                                }
                             }
                         }
                     }
+                    //Cleanse temporal variables
+                    unset($PEDOutData, $PEDInData);
                 }
-                //Cleanse temporal variables
-                unset($PEDOutData, $PEDInData);
             }
         }
         //All OK, Unset LogicHeap
