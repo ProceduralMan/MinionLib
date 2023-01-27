@@ -1455,6 +1455,16 @@ function cURLOptionsValidate($cURLOptions)
     if (DEBUGMODE)
     {
         echo date("Y-m-d H:i:s").' -> cURLOptionsValidate '.PHP_EOL;
+        if (empty($cURLOptions))
+        {
+            echo 'No options to validate'.PHP_EOL;
+
+            return FALSE;
+        }
+        else
+        {
+            echo count($cURLOptions).' options to validate'.PHP_EOL;
+        }
     }
 
     //Validar las de:
@@ -1475,16 +1485,6 @@ function cURLOptionsValidate($cURLOptions)
 
         cURL handle test @see CURLOPT_SHARE down there
      */
-    if (empty($cURLOptions))
-    {
-        echo 'No options to validate'.PHP_EOL;
-
-        return FALSE;
-    }
-    else
-    {
-        echo count($cURLOptions).' options to validate'.PHP_EOL;
-    }
 
     $BadcURLOptions = array();
     //$Key cames as int now
@@ -1501,15 +1501,18 @@ function cURLOptionsValidate($cURLOptions)
     //See below for each string to int translation... hopefully their will be the same in PHP
     foreach ($cURLOptions as $Key => $Value)
     {
-        if (!is_array($Value))
+        if (DEBUGMODE)
         {
-            $Textd = $Value;
+            if (!is_array($Value))
+            {
+                $Textd = $Value;
+            }
+            else
+            {
+                $Textd = json_encode($Value, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_NUMERIC_CHECK);
+            }
+            echo cURLOptionConstantToLiteral($Key).'=>'.$Textd.PHP_EOL;
         }
-        else
-        {
-            $Textd = json_encode($Value, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_NUMERIC_CHECK);
-        }
-        echo cURLOptionConstantToLiteral($Key).'=>'.$Textd.PHP_EOL;
         switch ($Key)
         {
             //Behaviour Options
@@ -6151,12 +6154,13 @@ function cURLSimplePOST($URL, $Parameters = NULL, $URLEncoded = FALSE)
  *                                  PHP_QUERY_RFC1738 for RFC1738 (really RFC1630) plus_sign application/x-www-form-urlencoded encoding 
  *                                  PHP_QUERY_RFC3986 for RFC3986 section 2.1 (Percent-Encoding) encoding
  * @param   array   $cURLOptions    Array of cURL options to set
+ * @param mixed $JSON
  * @return  mixed   JSON on correct and erroneous calls, FALSE on validation errors
  * @since 0.0.9
  * @todo
  * @see Postman, https://zetcode.com/php/curl/
  */
-function cURLFullGET($URL, $Parameters = NULL, $Encoding = NULL, $cURLOptions = NULL)
+function cURLFullGET($URL, $Parameters = NULL, $Encoding = NULL, $cURLOptions = NULL, $JSON = FALSE)
 {
     if (DEBUGMODE)
     {
@@ -6344,7 +6348,25 @@ function cURLFullGET($URL, $Parameters = NULL, $Encoding = NULL, $cURLOptions = 
 
     //HTTP Code to be processed Upstream, we are only the callers
     $Feedback['HTTPCode'] = $HTTPCode;
-    $Feedback['Response'] = $Response;
+    if ($JSON === TRUE)
+    {
+        //JSON answer... try to decode it so as to clean formatting
+        $ArrResponse = json_decode($Response, TRUE);
+        if (is_null($ArrResponse))
+        {
+            //Decoding failed... we give up and send it up for ttreatment
+            $Feedback['Response'] = $Response;
+        }
+        else
+        {
+            $Feedback['Response'] = $ArrResponse;
+        }
+    }
+    else
+    {
+        //Non-JSON or unknown... we send the answer back untouched
+        $Feedback['Response'] = $Response;
+    }
     $EncodedFB = json_encode($Feedback,  JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_NUMERIC_CHECK);
     if ($EncodedFB === FALSE)
     {

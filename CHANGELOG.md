@@ -1,4 +1,7 @@
 # MinionLib Change Log
+## Version 0.0.9.2 (2023-01-27)
+- Debug trace controlled by DEBUGMODE constant in MinionLib
+- JSON option on cURLFullGET to decode and reencode JSON response to cleans formatted JSONS
 ## Version 0.0.9.1 (2023-01-23)
 - Solve array to string issue when validating cURL options
 - Solve array to string issue when passing options to cURL
