@@ -1,4 +1,7 @@
 # MinionLib Change Log
+## Version 0.0.9.1 (2023-01-23)
+- Solve array to string issue when validating cURL options
+- Solve array to string issue when passing options to cURL
 ## Version 0.0.9 (2022-12-06)
 - Configuration Functions:
   - CheckPHPVersion Checks if the runtime PHP version is the same or newer than the required one

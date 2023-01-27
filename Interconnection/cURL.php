@@ -1501,7 +1501,15 @@ function cURLOptionsValidate($cURLOptions)
     //See below for each string to int translation... hopefully their will be the same in PHP
     foreach ($cURLOptions as $Key => $Value)
     {
-        echo cURLOptionConstantToLiteral($Key).'=>'.$Value.PHP_EOL;
+        if (!is_array($Value))
+        {
+            $Textd = $Value;
+        }
+        else
+        {
+            $Textd = json_encode($Value, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_NUMERIC_CHECK);
+        }
+        echo cURLOptionConstantToLiteral($Key).'=>'.$Textd.PHP_EOL;
         switch ($Key)
         {
             //Behaviour Options
@@ -5669,10 +5677,18 @@ function cURLWebServiceCaller($HTTPMethod, $URL, $Parameters = NULL, $Encoding =
     //Set the rest of options
     foreach ($cURLOptions as $Key => $Value)
     {
-        echo  'Setting '.cURLOptionConstantToLiteral($Key).' as '.$Value.PHP_EOL;
-        if (!curl_setopt($cURL, $Key,  FALSE))
+        if (!is_array($Value))
         {
-            ErrorLog('Error setting '.$Key.' as '.$Value, E_USER_ERROR);
+            $Textd = $Value;
+        }
+        else
+        {
+            $Textd = json_encode($Value, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_NUMERIC_CHECK);
+        }
+        echo  'Setting '.cURLOptionConstantToLiteral($Key).' as '.$Textd.PHP_EOL;
+        if (!curl_setopt($cURL, $Key,  $Value))
+        {
+            ErrorLog('Error setting '.$Key.' as '.$Textd, E_USER_ERROR);
 
             return FALSE;
         }
@@ -6280,10 +6296,18 @@ function cURLFullGET($URL, $Parameters = NULL, $Encoding = NULL, $cURLOptions = 
     {
         foreach ($cURLOptions as $Key => $Value)
         {
-            echo  'Setting '.cURLOptionConstantToLiteral($Key).' as '.$Value.PHP_EOL;
-            if (!curl_setopt($cURL, $Key,  FALSE))
+            if (!is_array($Value))
             {
-                ErrorLog('Error setting '.$Key.' as '.$Value, E_USER_ERROR);
+                $Textd = $Value;
+            }
+            else
+            {
+                $Textd = json_encode($Value, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_NUMERIC_CHECK);
+            }
+            echo  'Setting '.cURLOptionConstantToLiteral($Key).' as '.$Textd.PHP_EOL;
+            if (!curl_setopt($cURL, $Key,  $Value))
+            {
+                ErrorLog('Error setting '.$Key.' as '.$Textd, E_USER_ERROR);
 
                 return FALSE;
             }
@@ -6462,10 +6486,18 @@ function cURLFullHEAD($URL, $Parameters = NULL, $cURLOptions = NULL)
     {
         foreach ($cURLOptions as $Key => $Value)
         {
-            echo  'Setting '.cURLOptionConstantToLiteral($Key).' as '.$Value.PHP_EOL;
-            if (!curl_setopt($cURL, $Key,  FALSE))
+            if (!is_array($Value))
             {
-                ErrorLog('Error setting '.$Key.' as '.$Value, E_USER_ERROR);
+                $Textd = $Value;
+            }
+            else
+            {
+                $Textd = json_encode($Value, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_NUMERIC_CHECK);
+            }
+            echo  'Setting '.cURLOptionConstantToLiteral($Key).' as '.$Textd.PHP_EOL;
+            if (!curl_setopt($cURL, $Key,  $Value))
+            {
+                ErrorLog('Error setting '.$Key.' as '.$Textd, E_USER_ERROR);
 
                 return FALSE;
             }
@@ -6661,10 +6693,18 @@ function cURLFullPOST($URL, $Parameters = NULL, $cURLOptions = NULL, $URLEncoded
     {
         foreach ($cURLOptions as $Key => $Value)
         {
-            echo  'Setting '.cURLOptionConstantToLiteral($Key).' as '.$Value.PHP_EOL;
-            if (!curl_setopt($cURL, $Key,  FALSE))
+            if (!is_array($Value))
             {
-                ErrorLog('Error setting '.$Key.' as '.$Value, E_USER_ERROR);
+                $Textd = $Value;
+            }
+            else
+            {
+                $Textd = json_encode($Value, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_NUMERIC_CHECK);
+            }
+            echo  'Setting '.cURLOptionConstantToLiteral($Key).' as '.$Textd.PHP_EOL;
+            if (!curl_setopt($cURL, $Key,  $Value))
+            {
+                ErrorLog('Error setting '.$Key.' as '.$Textd, E_USER_ERROR);
 
                 return FALSE;
             }
@@ -6911,10 +6951,18 @@ function cURLFileGET($URL, $Destination, $cURLOptions)
     {
         foreach ($cURLOptions as $Key => $Value)
         {
-            echo  'Setting '.cURLOptionConstantToLiteral($Key).' as '.$Value.PHP_EOL;
-            if (!curl_setopt($cURL, $Key,  FALSE))
+            if (!is_array($Value))
             {
-                ErrorLog('Error setting '.$Key.' as '.$Value, E_USER_ERROR);
+                $Textd = $Value;
+            }
+            else
+            {
+                $Textd = json_encode($Value, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_NUMERIC_CHECK);
+            }
+            echo  'Setting '.cURLOptionConstantToLiteral($Key).' as '.$Textd.PHP_EOL;
+            if (!curl_setopt($cURL, $Key,  $Value))
+            {
+                ErrorLog('Error setting '.$Key.' as '.$Textd, E_USER_ERROR);
 
                 return FALSE;
             }
@@ -7246,10 +7294,18 @@ function cURLFilePUT($Origin, $URL, $cURLOptions)
     {
         foreach ($cURLOptions as $Key => $Value)
         {
-            echo  'Setting '.cURLOptionConstantToLiteral($Key).' as '.$Value.PHP_EOL;
-            if (!curl_setopt($cURL, $Key,  FALSE))
+            if (!is_array($Value))
             {
-                ErrorLog('Error setting '.$Key.' as '.$Value, E_USER_ERROR);
+                $Textd = $Value;
+            }
+            else
+            {
+                $Textd = json_encode($Value, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_NUMERIC_CHECK);
+            }
+            echo  'Setting '.cURLOptionConstantToLiteral($Key).' as '.$Textd.PHP_EOL;
+            if (!curl_setopt($cURL, $Key,  $Value))
+            {
+                ErrorLog('Error setting '.$Key.' as '.$Textd, E_USER_ERROR);
 
                 return FALSE;
             }
@@ -7737,10 +7793,18 @@ function cURLFilePOST($Origin, $URL, $Destination = NULL, $cURLOptions = NULL)
     {
         foreach ($cURLOptions as $Key => $Value)
         {
-            echo  'Setting '.cURLOptionConstantToLiteral($Key).' as '.$Value.PHP_EOL;
-            if (!curl_setopt($cURL, $Key,  FALSE))
+            if (!is_array($Value))
             {
-                ErrorLog('Error setting '.$Key.' as '.$Value, E_USER_ERROR);
+                $Textd = $Value;
+            }
+            else
+            {
+                $Textd = json_encode($Value, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_NUMERIC_CHECK);
+            }
+            echo  'Setting '.cURLOptionConstantToLiteral($Key).' as '.$Textd.PHP_EOL;
+            if (!curl_setopt($cURL, $Key,  $Value))
+            {
+                ErrorLog('Error setting '.$Key.' as '.$Textd, E_USER_ERROR);
 
                 return FALSE;
             }
